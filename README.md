@@ -1,28 +1,24 @@
-## compoundProtocol usage
+## Cream Protocol usage
 
-a) deploy JCompound contract and initialize it ((address _adminTools, address _feesCollector, address _tranchesDepl,
+a) deploy JCream contract and initialize it ((address _adminTools, address _feesCollector, address _tranchesDepl,
             address _compTokenAddress, address _comptrollAddress, address _rewardsToken)
 
-b) call setCEtherContract(address payable _cEtherContract) (cETH address) and setCTokenContract(address _erc20Contract, address _cErc20Contract), i.e. DAI and cDAI address, or 0x0(ethers) and cETH address, and so on.
+b) call setCEtherContract(address payable _crEtherContract) (crETH address) and setCTokenContract(address _erc20Contract, address _crErc20Contract), i.e. DAI and crDAI address, or 0x0(ethers) and crETH address, and so on.
 
-    setCEtherContract on Kovan: 0x41b5844f4680a8c38fbb695b7f9cfd1f64474a72
+    UniTroller: 0xFcc044535b84242F5450595b248e8042fa827ffE
+    index 0: crETH: 0x6885CC84e759D78F63BFBB480fe9E5122a177035
+    index 1: crUSDC: 0xc5b2327e4084b587ebd751be4462ac24fce3a904
 
-    setCTokenContract on Kovan(DAI): "0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa","0xf0d0eb522cfa50b716b3b1604c4f0fa6f04376ad"
+    setCEtherContract on Kovan: 0x6885CC84e759D78F63BFBB480fe9E5122a177035
 
-    setCTokenContract on Kovan(USDT): "0x07de306FF27a2B630B1141956844eB1552B956B5","0x3f0A0EA2f86baE6362CF9799B523BA06647Da018"
+    setCTokenContract on Kovan(USDC): "0xb7a4F3E9097C08dA09517b5aB877F7a917224ede","0xc5b2327e4084b587ebd751be4462ac24fce3a904"
 
-    setCTokenContract on Kovan(USDC): "0xb7a4F3E9097C08dA09517b5aB877F7a917224ede","0x4a92E71227D294F041BD82dd8f78591B75140d63"
-
-c) set jCompound address in jTranchesDeployer contract
+c) set JCream address in jTranchesDeployer contract
 
 d) call addTrancheToProtocol(address _erc20Contract, string memory _nameA, string memory _symbolA, 
-            string memory _nameB, string memory _symbolB, uint256 _fixedRpb, uint8 _cTokenDec, uint8 _underlyingDec) to set a new tranche set
+            string memory _nameB, string memory _symbolB, uint256 _fixedRpb, uint8 _crTokenDec, uint8 _underlyingDec) to set a new tranche set
 
     add eth tranche "0x0000000000000000000000000000000000000000","eta","ETA","etb","ETB","40000000000000000","8","18" ---> Please read note here below
-
-    add DAI tranche "0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa","dta","DTA","dtb","DTB","30000000000000000","8","18"
-
-    add USDT tranche "0x07de306FF27a2B630B1141956844eB1552B956B5","utta","UTTA","uttb","UTTB","200000000000000","8","6"
     
     add USDC tranche "0xb7a4F3E9097C08dA09517b5aB877F7a917224ede","ucta","UCTA","uctb","UCTB","30000000000000","8","6"
 
@@ -30,7 +26,7 @@ e) remember to enable every tranche deposit with setTrancheDeposit(uint256 _tran
 
 Users can now call buy and redeem functions for tranche A & B tokens
 
-Note: if ETH tranche is deployed, please deploy ETHGateway contract without a proxy, then set its address in JCompound with setETHGateway function.
+Note: if ETH tranche is deployed, please deploy ETHGateway contract without a proxy, then set its address in JCream with setETHGateway function.
 
 
 ## Uniswap contracts
@@ -42,25 +38,20 @@ This is due to different init code hash for UniswapV2Library file when compiled 
 
     - hex'555c8bf3a68dcde924051e2b2db6a6bbce50f756cacad88fdfcaab07ec40b7d9' // i.e. init code hash for tests
 
-Please launch !!uniswapInitHashCode.test.js to get your init code hash in test environment
+Please launch !!AAAuniswapInitHashCode.test.js to get your init code hash in test environment
 
-Tests on Kovan
+
+### Uniswap Tests on Kovan
 
 Uniswap factory on kovan: 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f - Uniswap Router02 on kovan: 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D
 
-Fees Collector on kovan: 0x3623DC2600c8419F8D88bE276FEA9354e3A8C3C0
-
-Some examples:
-
-DAI address: 0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa
-
-WETH address: 0xd0a1e359811322d97991e03f863a0c30c2cf029c
-
-USDC address: 0xe22da380ee6B445bb8273C81944ADEB6E8450422
-
 you can test whatever pair you like that is already been deployed by uniswap factory!
 
+## TBD
 
+- does Cream distributes rewards (like compound in COMP tokens)?
+
+- more test has to be done on mainnet?
 
 ## Contracts Size (main contracts, no interfaces, no test contracts)
 Limit is 24 KiB for single contract
