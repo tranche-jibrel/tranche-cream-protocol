@@ -7,11 +7,11 @@ const {
     expectRevert,
     time
 } = require('@openzeppelin/test-helpers');
-const {
+/*const {
     accounts,
     contract,
     web3
-} = require('@openzeppelin/test-environment');
+} = require('@openzeppelin/test-environment');*/
 const {
     expect
 } = require('chai');
@@ -25,28 +25,34 @@ const timeMachine = require('ganache-time-traveler');
 require("chai")
     .use(require("chai-bn")(BN))
     .should();
-
+/*
 const JTrancheAToken = contract.fromArtifact('JTrancheAToken');
 const JTrancheBToken = contract.fromArtifact('JTrancheBToken');
-
+*/
 const {
     deployMinimumFactory,
+    getDeployedContracts,
     sendcDAItoProtocol,
     sendDAItoUsers
-} = require('../test/JCreamProtocolFunctions');
+} = require('./JCreamProtocolFunctions');
 
-describe('JProtocol', function () {
+contract('JProtocol', function (accounts) {
   const GAS_PRICE = 27000000000; //Gwei = 10 ** 9 wei
 
-  const [tokenOwner, factoryOwner, factoryAdmin, user1, user2, user3, user4, user5, user6] = accounts;
+  tokenOwner = accounts[0];
+  user1 = accounts[1];
+  user2 = accounts[2];
+  user3 = accounts[3];
+  user4 = accounts[4];
+  user5 = accounts[5];
+  user6 = accounts[6];
 
   //beforeEach(async function () {
 
   //});
 
-  deployMinimumFactory(tokenOwner, factoryOwner, factoryAdmin);
-
-  //sendcDAItoProtocol(tokenOwner);
+  //deployMinimumFactory(tokenOwner, factoryOwner, factoryAdmin);
+  getDeployedContracts(accounts[0], accounts[1]);
 
   sendDAItoUsers(tokenOwner, user1, user2, user3, user4, user5, user6);
 
@@ -146,7 +152,7 @@ describe('JProtocol', function () {
 
   it('time passes...', async function () {
     let block = await web3.eth.getBlockNumber();
-    console.log("Actual Block: " + block.number);
+    console.log("Actual Block: " + block);
     for (i = 0; i < 100; i++) {
         await timeMachine.advanceBlock()
     }
@@ -176,7 +182,7 @@ describe('JProtocol', function () {
 
   it('time passes to let the redeem timeout to expire', async function () {
     let block = await web3.eth.getBlockNumber();
-    console.log("Actual Block: " + block.number);
+    console.log("Actual Block: " + block);
     for (i = 0; i < 10; i++) {
         await timeMachine.advanceBlock()
     }
@@ -224,7 +230,7 @@ describe('JProtocol', function () {
 
   it('time passes to let the redeem timeout to expire', async function () {
     let block = await web3.eth.getBlockNumber();
-    console.log("Actual Block: " + block.number);
+    console.log("Actual Block: " + block);
     for (i = 0; i < 10; i++) {
         await timeMachine.advanceBlock()
     }
@@ -273,7 +279,7 @@ describe('JProtocol', function () {
 
   it('time passes to let the redeem timeout to expire', async function () {
     let block = await web3.eth.getBlockNumber();
-    console.log("Actual Block: " + block.number);
+    console.log("Actual Block: " + block);
     for (i = 0; i < 10; i++) {
         await timeMachine.advanceBlock()
     }
@@ -325,7 +331,7 @@ describe('JProtocol', function () {
 
   it('time passes to let the redeem timeout to expire', async function () {
     let block = await web3.eth.getBlockNumber();
-    console.log("Actual Block: " + block.number);
+    console.log("Actual Block: " + block);
     for (i = 0; i < 10; i++) {
         await timeMachine.advanceBlock()
     }
@@ -361,11 +367,12 @@ describe('JProtocol', function () {
     console.log("user1 SLICE balance: "+ web3.utils.fromWei(bal, "ether") + " SLICE");
     bal = await this.SLICE.balanceOf(this.DaiTrA.address);
     console.log("trA SLICE balance: "+ web3.utils.fromWei(bal, "ether") + " SLICE");
-    tx = await this.JCream.emergencyRemoveTokensFromTranche(this.DaiTrA.address, this.SLICE.address, user1, bal, {from: factoryAdmin});
+    tx = await this.JCream.emergencyRemoveTokensFromTranche(this.DaiTrA.address, this.SLICE.address, user1, bal, {from: tokenOwner});
     bal = await this.SLICE.balanceOf(this.DaiTrA.address);
     console.log("trA SLICE balance after emergency withdraw: "+ web3.utils.fromWei(bal, "ether") + " SLICE");
     bal = await this.SLICE.balanceOf(user1);
     console.log("user1 SLICE balance after emergency withdraw: "+ web3.utils.fromWei(bal, "ether") + " SLICE");
+    console.log("user1 already withdrawn rewards amount: " + await this.DaiTrA.withdrawnFundsOf(user1));
   });
 
 });

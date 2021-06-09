@@ -19,7 +19,7 @@ const {
 const {
   ZERO_ADDRESS
 } = constants;
-
+/*
 const myERC20 = contract.fromArtifact("myERC20");
 const CEther = contract.fromArtifact("CEther");
 const CErc20 = contract.fromArtifact("CErc20");
@@ -31,6 +31,19 @@ const JTranchesDeployer = contract.fromArtifact('JTranchesDeployer');
 
 const JTrancheAToken = contract.fromArtifact('JTrancheAToken');
 const JTrancheBToken = contract.fromArtifact('JTrancheBToken');
+*/
+const myERC20 = artifacts.require("myERC20");
+const mySlice = artifacts.require("mySlice");
+const CEther = artifacts.require("CEther");
+const CErc20 = artifacts.require("CErc20");
+const JAdminTools = artifacts.require('JAdminTools');
+const JFeesCollector = artifacts.require('JFeesCollector');
+
+const JCream = artifacts.require('JCream');
+const JTranchesDeployer = artifacts.require('JTranchesDeployer');
+
+const JTrancheAToken = artifacts.require('JTrancheAToken');
+const JTrancheBToken = artifacts.require('JTrancheBToken');
 
 const MYERC20_TOKEN_SUPPLY = 5000000;
 const GAS_PRICE = 27000000000;
@@ -309,6 +322,7 @@ function deployMinimumFactory(tokenOwner, factoryOwner, factoryAdmin) {
     tx = await this.JCream.addTrancheToProtocol(ZERO_ADDRESS, "jEthTrancheAToken", "JEA", "jEthTrancheBToken", "JEB", web3.utils.toWei("0.04", "ether"), 18, 18, {
       from: factoryOwner
     });
+    tx = await this.JCream.setTrancheDeposit(0, true, { from: factoryOwner });
     trParams = await this.JCream.trancheAddresses(0);
     this.EthTrA = await JTrancheAToken.at(trParams.ATrancheAddress);
     console.log("Eth Tranche A Token Address: " + this.EthTrA.address);
@@ -318,12 +332,90 @@ function deployMinimumFactory(tokenOwner, factoryOwner, factoryAdmin) {
     tx = await this.JCream.addTrancheToProtocol(this.DAI.address, "jDaiTrancheAToken", "JDA", "jDaiTrancheBToken", "JDB", web3.utils.toWei("0.03", "ether"), 18, 18, {
       from: factoryOwner
     });
+    tx = await this.JCream.setTrancheDeposit(1, true, { from: factoryOwner });
     trParams = await this.JCream.trancheAddresses(1);
     this.DaiTrA = await JTrancheAToken.at(trParams.ATrancheAddress);
     console.log("Dai Tranche A Token Address: " + this.DaiTrA.address);
     this.DaiTrB = await JTrancheBToken.at(trParams.BTrancheAddress);
     console.log("Dai Tranche B Token Address: " + this.DaiTrB.address);
   });
+}
+
+
+function getDeployedContracts(tokenOwner, user1) {
+  it("ETH balances", async function () {
+    console.log(tokenOwner);
+    console.log(await web3.eth.getBalance(tokenOwner));
+    console.log(await web3.eth.getBalance(user1));
+  });
+
+  it("DAI total Supply", async function () {
+    this.DAI = await myERC20.deployed();
+    result = await this.DAI.totalSupply();
+    expect(web3.utils.fromWei(result.toString(), "ether")).to.be.equal(MYERC20_TOKEN_SUPPLY.toString());
+    this.SLICE = await mySlice.deployed();
+  });
+
+  it("Mockups ok", async function () {
+    this.CEther = await CEther.deployed();
+    expect(this.CEther.address).to.be.not.equal(ZERO_ADDRESS);
+    expect(this.CEther.address).to.match(/0x[0-9a-fA-F]{40}/);
+    console.log(this.CEther.address);
+    this.CErc20 = await CErc20.deployed();
+    expect(this.CErc20.address).to.be.not.equal(ZERO_ADDRESS);
+    expect(this.CErc20.address).to.match(/0x[0-9a-fA-F]{40}/);
+    console.log(this.CErc20.address);
+    tx = await this.CErc20.setToken(this.DAI.address); // just for mockup!!!
+  });
+
+  it("All other contracts ok", async function () {
+    this.JFeesCollector = await JFeesCollector.deployed();
+    expect(this.JFeesCollector.address).to.be.not.equal(ZERO_ADDRESS);
+    expect(this.JFeesCollector.address).to.match(/0x[0-9a-fA-F]{40}/);
+    console.log(this.JFeesCollector.address);
+
+    this.JAdminTools = await JAdminTools.deployed();
+    expect(this.JAdminTools.address).to.be.not.equal(ZERO_ADDRESS);
+    expect(this.JAdminTools.address).to.match(/0x[0-9a-fA-F]{40}/);
+    console.log(this.JAdminTools.address);
+    console.log(await this.JAdminTools.isAdmin(tokenOwner));
+
+    this.JTranchesDeployer = await JTranchesDeployer.deployed();
+    expect(this.JTranchesDeployer.address).to.be.not.equal(ZERO_ADDRESS);
+    expect(this.JTranchesDeployer.address).to.match(/0x[0-9a-fA-F]{40}/);
+    console.log(this.JTranchesDeployer.address);
+
+    this.JCream = await JCream.deployed();
+    expect(this.JCream.address).to.be.not.equal(ZERO_ADDRESS);
+    expect(this.JCream.address).to.match(/0x[0-9a-fA-F]{40}/);
+    console.log(this.JCream.address);
+    await this.JCream.setRedemptionTimeout(0, {
+      from: tokenOwner
+    });
+
+    trParams0 = await this.JCream.trancheAddresses(0);
+    this.EthTrA = await JTrancheAToken.at(trParams0.ATrancheAddress);
+    expect(this.EthTrA.address).to.be.not.equal(ZERO_ADDRESS);
+    expect(this.EthTrA.address).to.match(/0x[0-9a-fA-F]{40}/);
+    console.log(this.EthTrA.address);
+
+    this.EthTrB = await JTrancheBToken.at(trParams0.BTrancheAddress);
+    expect(this.EthTrB.address).to.be.not.equal(ZERO_ADDRESS);
+    expect(this.EthTrB.address).to.match(/0x[0-9a-fA-F]{40}/);
+    console.log(this.EthTrB.address);
+
+    trParams1 = await this.JCream.trancheAddresses(1);
+    this.DaiTrA = await JTrancheAToken.at(trParams1.ATrancheAddress);
+    expect(this.DaiTrA.address).to.be.not.equal(ZERO_ADDRESS);
+    expect(this.DaiTrA.address).to.match(/0x[0-9a-fA-F]{40}/);
+    console.log(this.DaiTrA.address);
+
+    this.DaiTrB = await JTrancheBToken.at(trParams1.BTrancheAddress);
+    expect(this.DaiTrB.address).to.be.not.equal(ZERO_ADDRESS);
+    expect(this.DaiTrB.address).to.match(/0x[0-9a-fA-F]{40}/);
+    console.log(this.DaiTrB.address);
+  });
+
 }
 
 
@@ -417,6 +509,7 @@ function sendDAItoUsers(tokenOwner, user1, user2, user3, user4, user5, user6) {
 
 module.exports = {
   deployMinimumFactory,
+  getDeployedContracts,
   sendcETHtoProtocol,
   sendcDAItoProtocol,
   sendDAItoUsers

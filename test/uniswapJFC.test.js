@@ -109,7 +109,7 @@ describe('Uniswap JFeesCollector', function () {
 
     it('exchange token1 for token2 from LP0', async () => {
       let block = await web3.eth.getBlock("latest");
-      console.log("Actual Block: " + block.number);
+      console.log("Actual Block: " + block);
       console.log("Actual Block Timestamp: " + block.timestamp);
 
       let deadline = block.timestamp + 15; // using 'now' for convenience, for mainnet pass deadline from frontend!
@@ -133,7 +133,7 @@ describe('Uniswap JFeesCollector', function () {
 
     it('exchange token2 for token1 from LP0', async () => {
       let block = await web3.eth.getBlock("latest");
-      console.log("Actual Block: " + block.number);
+      console.log("Actual Block: " + block);
       console.log("Actual Block Timestamp: " + block.timestamp);
 
       let deadline = block.timestamp + 15; // using 'now' for convenience, for mainnet pass deadline from frontend!
@@ -195,7 +195,7 @@ describe('Uniswap JFeesCollector', function () {
 
     it('exchange eth for tokens from LP1', async () => {
       let block = await web3.eth.getBlock("latest");
-      console.log("Actual Block: " + block.number);
+      console.log("Actual Block: " + block);
       console.log("Actual Block Timestamp: " + block.timestamp);
 
       let deadline = block.timestamp + 15; // using 'now' for convenience, for mainnet pass deadline from frontend!
@@ -218,7 +218,7 @@ describe('Uniswap JFeesCollector', function () {
 
     it('exchange tokens for eth from LP1', async () => {
       let block = await web3.eth.getBlock("latest");
-      console.log("Actual Block: " + block.number);
+      console.log("Actual Block: " + block);
       console.log("Actual Block Timestamp: " + block.timestamp);
 
       let deadline = block.timestamp + 15; // using 'now' for convenience, for mainnet pass deadline from frontend!

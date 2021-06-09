@@ -258,7 +258,7 @@ contract("JCream", function (accounts) {
 
   it('time passes...', async function () {
     let block = await web3.eth.getBlockNumber();
-    console.log("Actual Block: " + block.number);
+    console.log("Actual Block: " + block);
     for (i = 0; i < 100; i++) {
         await timeMachine.advanceBlock()
     }
@@ -321,7 +321,7 @@ contract("JCream", function (accounts) {
 
   it('time passes...', async function () {
     let block = await web3.eth.getBlockNumber();
-    console.log("Actual Block: " + block.number);
+    console.log("Actual Block: " + block);
     for (i = 0; i < 100; i++) {
         await timeMachine.advanceBlock()
     }

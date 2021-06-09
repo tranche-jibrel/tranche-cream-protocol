@@ -7,11 +7,11 @@ const {
     expectRevert,
     time
 } = require('@openzeppelin/test-helpers');
-const {
+/*const {
     accounts,
     contract,
     web3
-} = require('@openzeppelin/test-environment');
+} = require('@openzeppelin/test-environment');*/
 const {
     expect
 } = require('chai');
@@ -19,36 +19,40 @@ const {
     ZERO_ADDRESS
 } = constants;
 
+
+const Web3 = require('web3');
+// Ganache UI on 8545
+const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+
 const timeMachine = require('ganache-time-traveler');
 
 //const BigNumber = web3.utils.BN;
 require("chai")
     .use(require("chai-bn")(BN))
     .should();
-
+/*
 const JTrancheAToken = contract.fromArtifact('JTrancheAToken');
 const JTrancheBToken = contract.fromArtifact('JTrancheBToken');
-
+*/
 const {
     deployMinimumFactory,
+    getDeployedContracts,
     sendcETHtoProtocol,
     sendDAItoUsers
 } = require('./JCreamProtocolFunctions');
 
-describe('JProtocol', function () {
+contract('JProtocol', function (accounts) {
   const GAS_PRICE = 27000000000; //Gwei = 10 ** 9 wei
-
-  const [tokenOwner, factoryOwner, factoryAdmin, user1, user2, user3, user4, user5, user6] = accounts;
 
   //beforeEach(async function () {
 
   //});
 
-  deployMinimumFactory(tokenOwner, factoryOwner, factoryAdmin);
+  //deployMinimumFactory(tokenOwner, factoryOwner, factoryAdmin);
+  getDeployedContracts(accounts[0], accounts[1]);
 
-  //sendcETHtoProtocol(tokenOwner);
-
-  //sendDAItoUsers(tokenOwner, user1, user2, user3, user4, user5, user6);
+  tokenOwner = accounts[0];
+  user1 = accounts[1];
 
   it('send some ETH to CEther', async function () {
     tx = await web3.eth.sendTransaction({to: this.CEther.address, from: tokenOwner, value: web3.utils.toWei('10', 'ether')});
@@ -91,9 +95,10 @@ describe('JProtocol', function () {
 
   it('time passes...', async function () {
     let block = await web3.eth.getBlockNumber();
-    console.log("Actual Block: " + block.number);
+    console.log("Actual Block: " + block);
     for (i = 0; i < 100; i++) {
         await timeMachine.advanceBlock()
+        //await time.advanceBlock()
     }
     console.log("New Actual Block: " + await web3.eth.getBlockNumber())
   });
@@ -104,6 +109,7 @@ describe('JProtocol', function () {
     bal = await this.EthTrA.balanceOf(user1);
     console.log("User1 trA tokens: "+ web3.utils.fromWei(bal, "ether") + " ETA");
     console.log("JCream cEth balance: "+ web3.utils.fromWei(await this.JCream.getTokenBalance(this.CEther.address), "ether") + " cEth");
+    console.log("CEther eth bal:" + web3.utils.fromWei(await web3.eth.getBalance(this.CEther.address)), "ether");
     tx = await this.EthTrA.approve(this.JCream.address, bal, {from: user1});
     tx = await this.JCream.redeemTrancheAToken(0, bal, {from: user1});
     newBal = web3.utils.fromWei(await web3.eth.getBalance(user1), "ether");
@@ -116,9 +122,10 @@ describe('JProtocol', function () {
 
   it('time passes...', async function () {
     let block = await web3.eth.getBlockNumber();
-    console.log("Actual Block: " + block.number);
+    console.log("Actual Block: " + block);
     for (i = 0; i < 100; i++) {
         await timeMachine.advanceBlock()
+        //await time.advanceBlock()
     }
     console.log("New Actual Block: " + await web3.eth.getBlockNumber())
     

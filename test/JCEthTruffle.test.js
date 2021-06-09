@@ -37,7 +37,7 @@ const EthGateway = artifacts.require('./ETHGateway');
 const MYERC20_TOKEN_SUPPLY = 5000000;
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
-let daiContract, cEtherContract, cERC20Contract, jFCContract, jATContract, jTrDeplContract, jCompContract;
+let daiContract, cEtherContract, cERC20Contract, jFCContract, jATContract, jTrDeplContract, jCreamContract;
 let ethTrAContract, ethTrBContract, daiTrAContract, daiTrBContract;
 let tokenOwner, user1;
 
@@ -85,15 +85,15 @@ contract("JCream", function (accounts) {
     expect(jTrDeplContract.address).to.match(/0x[0-9a-fA-F]{40}/);
     console.log(jTrDeplContract.address);
 
-    jCompContract = await JCream.deployed();
-    expect(jCompContract.address).to.be.not.equal(ZERO_ADDRESS);
-    expect(jCompContract.address).to.match(/0x[0-9a-fA-F]{40}/);
-    console.log(jCompContract.address);
-    await jCompContract.setRedemptionTimeout(0, {
+    jCreamContract = await JCream.deployed();
+    expect(jCreamContract.address).to.be.not.equal(ZERO_ADDRESS);
+    expect(jCreamContract.address).to.match(/0x[0-9a-fA-F]{40}/);
+    console.log(jCreamContract.address);
+    await jCreamContract.setRedemptionTimeout(0, {
       from: accounts[0]
     });
 
-    trParams0 = await jCompContract.trancheAddresses(0);
+    trParams0 = await jCreamContract.trancheAddresses(0);
     ethTrAContract = await JTrancheAToken.at(trParams0.ATrancheAddress);
     expect(ethTrAContract.address).to.be.not.equal(ZERO_ADDRESS);
     expect(ethTrAContract.address).to.match(/0x[0-9a-fA-F]{40}/);
@@ -104,7 +104,7 @@ contract("JCream", function (accounts) {
     expect(ethTrBContract.address).to.match(/0x[0-9a-fA-F]{40}/);
     console.log(ethTrBContract.address);
 
-    trParams1 = await jCompContract.trancheAddresses(1);
+    trParams1 = await jCreamContract.trancheAddresses(1);
     daiTrAContract = await JTrancheAToken.at(trParams1.ATrancheAddress);
     expect(daiTrAContract.address).to.be.not.equal(ZERO_ADDRESS);
     expect(daiTrAContract.address).to.match(/0x[0-9a-fA-F]{40}/);
@@ -139,47 +139,47 @@ contract("JCream", function (accounts) {
   it("user1 buys some token EthTrA", async function () {
     console.log(user1);
     console.log("User1 Eth balance: " + web3.utils.fromWei(await web3.eth.getBalance(user1), "ether") + " ETH");
-    console.log((await jCompContract.getCreamPrice(0)).toString());
-    trPar = await jCompContract.trancheParameters(0);
+    console.log((await jCreamContract.getCreamPrice(0)).toString());
+    trPar = await jCreamContract.trancheParameters(0);
     console.log("param tranche A: " + JSON.stringify(trPar));
-    console.log("rpb tranche A: " + await jCompContract.getTrancheACurrentRPB(0));
-    tx = await jCompContract.calcRPBFromPercentage(0, {
+    console.log("rpb tranche A: " + await jCreamContract.getTrancheACurrentRPB(0));
+    tx = await jCreamContract.calcRPBFromPercentage(0, {
       from: user1
     });
-    console.log("rpb tranche A: " + await jCompContract.getTrancheACurrentRPB(0));
-    trAPrice = await jCompContract.getTrancheAExchangeRate(0, {
+    console.log("rpb tranche A: " + await jCreamContract.getTrancheACurrentRPB(0));
+    trAPrice = await jCreamContract.getTrancheAExchangeRate(0, {
       from: user1
     });
     console.log("price tranche A: " + trAPrice);
-    trPar = await jCompContract.trancheParameters(0);
+    trPar = await jCreamContract.trancheParameters(0);
     console.log("param tranche A: " + JSON.stringify(trPar));
-    tx = await jCompContract.buyTrancheAToken(0, web3.utils.toWei("1", "ether"), {
+    tx = await jCreamContract.buyTrancheAToken(0, web3.utils.toWei("1", "ether"), {
       from: user1,
       value: web3.utils.toWei("1", "ether")
     });
     console.log("User1 New Eth balance: " + web3.utils.fromWei(await web3.eth.getBalance(user1), "ether") + " ETH");
     console.log("User1 trA tokens: " + web3.utils.fromWei(await ethTrAContract.balanceOf(user1), "ether") + " ETA");
-    console.log("JCream cEth balance: " + web3.utils.fromWei(await jCompContract.getTokenBalance(cEtherContract.address), "ether") + " cEth");
-    console.log("TrA price: " + web3.utils.fromWei(await jCompContract.getTrancheAExchangeRate(0), "ether"));
-    console.log("Cream Price: " + await jCompContract.getCreamPrice(0));
-    console.log("TrA price: " + web3.utils.fromWei(await jCompContract.getTrancheAExchangeRate(0), "ether"));
+    console.log("JCream cEth balance: " + web3.utils.fromWei(await jCreamContract.getTokenBalance(cEtherContract.address), "ether") + " cEth");
+    console.log("TrA price: " + web3.utils.fromWei(await jCreamContract.getTrancheAExchangeRate(0), "ether"));
+    console.log("Cream Price: " + await jCreamContract.getCreamPrice(0));
+    console.log("TrA price: " + web3.utils.fromWei(await jCreamContract.getTrancheAExchangeRate(0), "ether"));
   });
 
   it("user1 buys some token EthTrB", async function () {
     //console.log("User1 Eth balance: "+ web3.utils.fromWei(await web3.eth.getBalance(user1), "ether") + " ETH");
-    tx = await jCompContract.buyTrancheBToken(0, web3.utils.toWei("1", "ether"), {
+    tx = await jCreamContract.buyTrancheBToken(0, web3.utils.toWei("1", "ether"), {
       from: user1,
       value: web3.utils.toWei("1", "ether")
     });
     console.log("User1 New Eth balance: " + web3.utils.fromWei(await web3.eth.getBalance(user1), "ether") + " ETH");
     console.log("User1 trB tokens: " + web3.utils.fromWei(await ethTrBContract.balanceOf(user1), "ether") + " ETB");
-    console.log("JCream cEth balance: " + web3.utils.fromWei(await jCompContract.getTokenBalance(cEtherContract.address), "ether") + " cEth");
-    console.log("TrB price: " + web3.utils.fromWei(await jCompContract.getTrancheBExchangeRate(0, 0), "ether"));
+    console.log("JCream cEth balance: " + web3.utils.fromWei(await jCreamContract.getTokenBalance(cEtherContract.address), "ether") + " cEth");
+    console.log("TrB price: " + web3.utils.fromWei(await jCreamContract.getTrancheBExchangeRate(0, 0), "ether"));
   });
 
   it('time passes...', async function () {
     let block = await web3.eth.getBlockNumber();
-    console.log("Actual Block: " + block.number);
+    console.log("Actual Block: " + block);
     for (i = 0; i < 100; i++) {
         await timeMachine.advanceBlock()
     }
@@ -194,35 +194,35 @@ contract("JCream", function (accounts) {
     console.log("User1 Eth balance: " + oldBal + " ETH");
     bal = await ethTrAContract.balanceOf(user1);
     console.log("User1 trA tokens: " + web3.utils.fromWei(bal, "ether") + " ETA");
-    console.log("JCream cEth balance: " + web3.utils.fromWei(await jCompContract.getTokenBalance(cEtherContract.address), "ether") + " cEth");
+    console.log("JCream cEth balance: " + web3.utils.fromWei(await jCreamContract.getTokenBalance(cEtherContract.address), "ether") + " cEth");
     console.log("CEther eth bal:" + web3.utils.fromWei(await web3.eth.getBalance(cEtherContract.address)), "ether");
-    trPar = await jCompContract.trancheParameters(0);
+    trPar = await jCreamContract.trancheParameters(0);
     stPrice = trPar.storedTrancheAPrice * Math.pow(10, -18);
     //console.log(stPrice.toString());
     tempAmnt = bal * Math.pow(10, -18);
     //console.log(tempAmnt.toString())
     taAmount = tempAmnt * stPrice;
     console.log(taAmount);
-    tx = await ethTrAContract.approve(jCompContract.address, bal, {
+    tx = await ethTrAContract.approve(jCreamContract.address, bal, {
       from: user1
     });
-    // await expectRevert.unspecified(jCompContract.redeemTrancheAToken(0, bal, {
+    // await expectRevert.unspecified(jCreamContract.redeemTrancheAToken(0, bal, {
     //   from: user1
     // }));
-    tx = await jCompContract.redeemTrancheAToken(0, bal, {
+    tx = await jCreamContract.redeemTrancheAToken(0, bal, {
       from: user1
     });
     newBal = web3.utils.fromWei(await web3.eth.getBalance(user1), "ether");
     console.log("User1 New Eth balance: " + newBal + " ETH");
     console.log("User1 trA interest: " + (newBal - oldBal) + " ETH");
     console.log("User1 trA tokens: " + web3.utils.fromWei(await ethTrAContract.balanceOf(user1), "ether") + " ETA");
-    console.log("JCream new cEth balance: " + web3.utils.fromWei(await jCompContract.getTokenBalance(cEtherContract.address), "ether") + " cEth");
-    console.log("TrA price: " + web3.utils.fromWei(await jCompContract.getTrancheAExchangeRate(0), "ether"));
+    console.log("JCream new cEth balance: " + web3.utils.fromWei(await jCreamContract.getTokenBalance(cEtherContract.address), "ether") + " cEth");
+    console.log("TrA price: " + web3.utils.fromWei(await jCreamContract.getTrancheAExchangeRate(0), "ether"));
   });
 
   it('time passes...', async function () {
     let block = await web3.eth.getBlockNumber();
-    console.log("Actual Block: " + block.number);
+    console.log("Actual Block: " + block);
     for (i = 0; i < 100; i++) {
         await timeMachine.advanceBlock()
     }
@@ -237,8 +237,8 @@ contract("JCream", function (accounts) {
     console.log("User1 Eth balance: " + oldBal + " ETH");
     bal = await ethTrBContract.balanceOf(user1);
     console.log("User1 trB tokens: " + web3.utils.fromWei(bal, "ether") + " ETB");
-    console.log("JCream cEth balance: " + web3.utils.fromWei(await jCompContract.getTokenBalance(cEtherContract.address), "ether") + " cEth");
-    trbPrice = web3.utils.fromWei(await jCompContract.getTrancheBExchangeRate(0, 0), "ether")
+    console.log("JCream cEth balance: " + web3.utils.fromWei(await jCreamContract.getTokenBalance(cEtherContract.address), "ether") + " cEth");
+    trbPrice = web3.utils.fromWei(await jCreamContract.getTrancheBExchangeRate(0, 0), "ether")
     console.log("TrB price: " + trbPrice);
     console.log("CEther eth bal:" + web3.utils.fromWei(await web3.eth.getBalance(cEtherContract.address)), "ether");
     //console.log(stPrice.toString());
@@ -246,20 +246,20 @@ contract("JCream", function (accounts) {
     //console.log(tempAmnt.toString())
     taAmount = tempAmnt * trbPrice;
     console.log(taAmount);
-    tx = await ethTrBContract.approve(jCompContract.address, bal, {
+    tx = await ethTrBContract.approve(jCreamContract.address, bal, {
       from: user1
     });
-    // await expectRevert.unspecified(jCompContract.redeemTrancheBToken(0, bal, {
+    // await expectRevert.unspecified(jCreamContract.redeemTrancheBToken(0, bal, {
     //   from: user1
     // }));
-    tx = await jCompContract.redeemTrancheBToken(0, bal, {
+    tx = await jCreamContract.redeemTrancheBToken(0, bal, {
       from: user1
     });
     newBal = web3.utils.fromWei(await web3.eth.getBalance(user1), "ether");
     console.log("User1 New Eth balance: " + newBal + " ETH");
     console.log("User1 trB interest: " + (newBal - oldBal) + " ETH");
     console.log("User1 trB tokens: " + web3.utils.fromWei(await ethTrBContract.balanceOf(user1), "ether") + " ETB");
-    console.log("JCream new cEth balance: " + web3.utils.fromWei(await jCompContract.getTokenBalance(cEtherContract.address), "ether") + " cEth");
-    console.log("TrB price: " + web3.utils.fromWei(await jCompContract.getTrancheBExchangeRate(0, 0), "ether"));
+    console.log("JCream new cEth balance: " + web3.utils.fromWei(await jCreamContract.getTokenBalance(cEtherContract.address), "ether") + " cEth");
+    console.log("TrB price: " + web3.utils.fromWei(await jCreamContract.getTrancheBExchangeRate(0, 0), "ether"));
   });
 });
