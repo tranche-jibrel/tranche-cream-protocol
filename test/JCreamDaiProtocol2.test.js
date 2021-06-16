@@ -82,7 +82,7 @@ contract('JProtocol', function (accounts) {
     console.log("param tranche A: " + JSON.stringify(trPar));
     trParams = await this.JCream.trancheAddresses(1);
     expect(trParams.buyerCoinAddress).to.be.equal(this.DAI.address);
-    expect(trParams.cTokenAddress).to.be.equal(this.CErc20.address);
+    expect(trParams.crTokenAddress).to.be.equal(this.CErc20.address);
     
     console.log("User1 DAI balance: "+ web3.utils.fromWei(await this.DAI.balanceOf(user1), "ether") + " DAI");
     tx = await this.DAI.approve(this.JCream.address, web3.utils.toWei("10000", "ether"), {from: user1});

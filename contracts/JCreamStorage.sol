@@ -17,7 +17,7 @@ contract JCreamStorage is OwnableUpgradeable {
 
     struct TrancheAddresses {
         address buyerCoinAddress;       // ETH (ZERO_ADDRESS) or DAI
-        address cTokenAddress;          // cETH or cDAI
+        address crTokenAddress;         // crETH or crDAI
         address ATrancheAddress;
         address BTrancheAddress;
     }
@@ -28,7 +28,7 @@ contract JCreamStorage is OwnableUpgradeable {
         uint256 storedTrancheAPrice;
         uint256 trancheACurrentRPB;
         uint16 redemptionPercentage;        // percentage with 2 decimals (divided by 10000, i.e. 95% is 9500)
-        uint8 cTokenDecimals;
+        uint8 crTokenDecimals;
         uint8 underlyingDecimals;
     }
 
@@ -43,13 +43,13 @@ contract JCreamStorage is OwnableUpgradeable {
     uint256 public totalBlocksPerYear; 
     uint32 public redeemTimeout;
 
-    mapping(address => address) public cTokenContracts;
+    mapping(address => address) public crTokenContracts;
     mapping(uint256 => TrancheAddresses) public trancheAddresses;
     mapping(uint256 => TrancheParameters) public trancheParameters;
     // last block number when the user buy/reddem tranche tokens
     mapping(address => uint256) public lastActivity;
 
-    ICEth public cEthToken;
+    ICEth public crEthToken;
     IETHGateway public ethGateway;
 
     // enabling / disabling tranches for fund deposit

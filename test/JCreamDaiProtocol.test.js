@@ -72,7 +72,7 @@ contract('JProtocol', function (accounts) {
     console.log("is Dai allowed in JCream: "+ await this.JCream.isCTokenAllowed(this.DAI.address));
     trParams = await this.JCream.trancheAddresses(1);
     expect(trParams.buyerCoinAddress).to.be.equal(this.DAI.address);
-    expect(trParams.cTokenAddress).to.be.equal(this.CErc20.address);
+    expect(trParams.crTokenAddress).to.be.equal(this.CErc20.address);
     console.log("User1 DAI balance: "+ web3.utils.fromWei(await this.DAI.balanceOf(user1), "ether") + " DAI");
     tx = await this.DAI.approve(this.JCream.address, web3.utils.toWei("10000", "ether"), {from: user1});
     tx = await this.JCream.buyTrancheAToken(1, web3.utils.toWei("10000", "ether"), {from: user1});
@@ -316,7 +316,7 @@ contract('JProtocol', function (accounts) {
   it("user1 buys some token EthTrA", async function () {
     trParams = await this.JCream.trancheAddresses(1);
     expect(trParams.buyerCoinAddress).to.be.equal(this.DAI.address);
-    expect(trParams.cTokenAddress).to.be.equal(this.CErc20.address);
+    expect(trParams.crTokenAddress).to.be.equal(this.CErc20.address);
     console.log("User1 DAI balance: "+ web3.utils.fromWei(await this.DAI.balanceOf(user1), "ether") + " DAI");
     tx = await this.DAI.approve(this.JCream.address, web3.utils.toWei("10000", "ether"), {from: user1});
     tx = await this.JCream.buyTrancheAToken(1, web3.utils.toWei("10000", "ether"), {from: user1});

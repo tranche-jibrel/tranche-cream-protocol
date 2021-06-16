@@ -16,7 +16,7 @@ contract ETHGateway is IETHGateway, Ownable {
 
   /**
    * @dev Sets the WETH address and the JCream address. Infinite approves JCream contract.
-   * @param _ceth Address of the Wrapped Ether contract
+   * @param _ceth Address of the cEther contract
    * @param _jCreamAddress Address of the JCream contract
    **/
   constructor(address _ceth, address _jCreamAddress) public {

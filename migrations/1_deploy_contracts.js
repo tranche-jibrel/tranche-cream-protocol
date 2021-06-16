@@ -20,7 +20,7 @@ var EthGateway = artifacts.require('./ETHGateway');
 module.exports = async (deployer, network, accounts) => {
   const MYERC20_TOKEN_SUPPLY = 5000000;
   const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-  const COMP_ADDRESS = "0xc00e94cb662c3520282e6f5717214004a7f26888";
+  const CREAM_ADDRESS = "0xc00e94cb662c3520282e6f5717214004a7f26888";
   const TROLLER_ADDRESS = "0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B";
   //const daiRequest = 100 * Math.pow(10, 18);
   //const DAI_REQUEST_HEX = "0x" + daiRequest.toString(16);
@@ -53,7 +53,7 @@ module.exports = async (deployer, network, accounts) => {
     console.log("Tranches Deployer: " + JTDeployer.address);
 
     const JCinstance = await deployProxy(JCream, [JATinstance.address, JFCinstance.address, JTDeployer.address,
-      COMP_ADDRESS, TROLLER_ADDRESS, mySLICEinstance.address], { from: factoryOwner });
+      CREAM_ADDRESS, TROLLER_ADDRESS, mySLICEinstance.address], { from: factoryOwner });
     console.log('JCream Deployed: ', JCinstance.address);
 
     await deployer.deploy(EthGateway, mycEthinstance.address, JCinstance.address);

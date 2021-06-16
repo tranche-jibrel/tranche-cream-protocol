@@ -152,7 +152,7 @@ contract("JCream", function (accounts) {
     console.log("param tranche A: " + JSON.stringify(trPar));
     trParams = await jCreamContract.trancheAddresses(1);
     expect(trParams.buyerCoinAddress).to.be.equal(daiContract.address);
-    expect(trParams.cTokenAddress).to.be.equal(cERC20Contract.address);
+    expect(trParams.crTokenAddress).to.be.equal(cERC20Contract.address);
     console.log("User1 DAI balance: " + web3.utils.fromWei(await daiContract.balanceOf(user1), "ether") + " DAI");
     tx = await daiContract.approve(jCreamContract.address, web3.utils.toWei("10000", "ether"), {
       from: user1
