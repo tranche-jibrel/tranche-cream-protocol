@@ -83,7 +83,7 @@ Note: if ETH tranche is deployed, please deploy ETHGateway contract without a pr
 
 [(Back to top)](#Cream-Tranche-Protocol)
 
-## Contracts Size (main contracts, no interfaces, no test contracts)
+## Main contracts - Name, Size and Description
 
 <table>
     <thead>
@@ -161,5 +161,5 @@ Note: if ETH tranche is deployed, please deploy ETHGateway contract without a pr
         </tr>
     </tbody>
   </table>
-  
+
 [(Back to top)](#Cream-Tranche-Protocol)
