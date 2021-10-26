@@ -4,11 +4,11 @@
  * @summary: Jibrel cream Tranche Protocol
  * @author: Jibrel Team
  */
-pragma solidity 0.6.12;
+pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "./interfaces/IJAdminTools.sol";
 import "./interfaces/IJTrancheTokens.sol";
 import "./interfaces/IJTranchesDeployer.sol";
@@ -17,6 +17,7 @@ import "./interfaces/ICErc20.sol";
 import "./interfaces/IComptrollerLensInterface.sol";
 import "./JCreamStorage.sol";
 import "./TransferETHHelper.sol";
+import "./interfaces/IIncentivesController.sol";
 
 
 contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage, IJCream {
@@ -45,7 +46,6 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
         creamtrollerAddress = _creamtrollAddress;
         rewardsToken = _rewardsToken;
         redeemTimeout = 3; //default
-        totalBlocksPerYear = 2102400; // same number like in cream protocol
     }
 
     /**
@@ -83,14 +83,6 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
         creamTokenAddress = _creamTokenAddress;
         creamtrollerAddress = _creamtrollAddress;
         rewardsToken = _rewardsToken;
-    }
-
-    /**
-     * @dev set how many blocks will be produced per year on the blockchain 
-     * @param _newValue new value (cream blocksPerYear = 2102400)
-     */
-    function setBlocksPerYear(uint256 _newValue) external onlyAdmins {
-        totalBlocksPerYear = _newValue;
     }
 
     /**
@@ -143,6 +135,21 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
     }
 
     /**
+     * @dev set incentive rewards address
+     * @param _incentivesController incentives controller contract address
+     */
+    function setincentivesControllerAddress(address _incentivesController) external onlyAdmins {
+        incentivesControllerAddress = _incentivesController;
+    }
+
+    /**
+     * @dev get incentive rewards address
+     */
+    function getSirControllerAddress() external view override returns (address) {
+        return incentivesControllerAddress;
+    }
+
+    /**
      * @dev check if a cToken is allowed or not
      * @param _trancheNum tranche number
      * @param _crTokenDec cToken decimals
@@ -192,8 +199,14 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
      * @param _crTokenDec cToken decimals
      * @param _underlyingDec underlying token decimals
      */
-    function addTrancheToProtocol(address _erc20Contract, string memory _nameA, string memory _symbolA, string memory _nameB, 
-                string memory _symbolB, uint256 _fixedRpb, uint8 _crTokenDec, uint8 _underlyingDec) external onlyAdmins nonReentrant {
+    function addTrancheToProtocol(address _erc20Contract, 
+            string memory _nameA, 
+            string memory _symbolA, 
+            string memory _nameB, 
+            string memory _symbolB, 
+            uint256 _fixedRpb, 
+            uint8 _crTokenDec, 
+            uint8 _underlyingDec) external onlyAdmins nonReentrant {
         require(tranchesDeployerAddress != address(0), "JCream: set tranche eth deployer");
         require(isCTokenAllowed(_erc20Contract), "JCream: cToken not allowed");
 
@@ -201,18 +214,22 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
         trancheAddresses[tranchePairsCounter].crTokenAddress = crTokenContracts[_erc20Contract];
         // our tokens always with 18 decimals
         trancheAddresses[tranchePairsCounter].ATrancheAddress = 
-                IJTranchesDeployer(tranchesDeployerAddress).deployNewTrancheATokens(_nameA, _symbolA, msg.sender, rewardsToken);
+                IJTranchesDeployer(tranchesDeployerAddress).deployNewTrancheATokens(_nameA, _symbolA, tranchePairsCounter);
         trancheAddresses[tranchePairsCounter].BTrancheAddress = 
-                IJTranchesDeployer(tranchesDeployerAddress).deployNewTrancheBTokens(_nameB, _symbolB, msg.sender, rewardsToken);
+                IJTranchesDeployer(tranchesDeployerAddress).deployNewTrancheBTokens(_nameB, _symbolB, tranchePairsCounter);
         
         trancheParameters[tranchePairsCounter].crTokenDecimals = _crTokenDec;
         trancheParameters[tranchePairsCounter].underlyingDecimals = _underlyingDec;
         trancheParameters[tranchePairsCounter].trancheAFixedPercentage = _fixedRpb;
-        trancheParameters[tranchePairsCounter].trancheALastActionBlock = block.number;
+        trancheParameters[tranchePairsCounter].trancheALastActionTime = block.timestamp;
         // if we would like to have always 18 decimals
         trancheParameters[tranchePairsCounter].storedTrancheAPrice = getCreamPrice(tranchePairsCounter);
 
-        trancheParameters[tranchePairsCounter].redemptionPercentage = 9950;  //default value 99.5%
+        trancheParameters[tranchePairsCounter].redemptionPercentage = 10000;  //default value 100%
+
+        // add tokens in adminTools contracts so they can change staking details
+        IJAdminTools(adminToolsAddress).addAdmin(trancheAddresses[tranchePairsCounter].ATrancheAddress);
+        IJAdminTools(adminToolsAddress).addAdmin(trancheAddresses[tranchePairsCounter].BTrancheAddress);
 
         calcRPBFromPercentage(tranchePairsCounter); // initialize tranche A RPB
 
@@ -340,11 +357,11 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
      */
     function setTrancheAExchangeRate(uint256 _trancheNum) internal returns (uint256) {
         calcRPBFromPercentage(_trancheNum);
-        uint256 deltaBlocks = (block.number).sub(trancheParameters[_trancheNum].trancheALastActionBlock);
-        if (deltaBlocks > 0) {
-            uint256 deltaPrice = (trancheParameters[_trancheNum].trancheACurrentRPB).mul(deltaBlocks);
+        uint256 deltaTime = (block.timestamp).sub(trancheParameters[_trancheNum].trancheALastActionTime);
+        if (deltaTime > 0) {
+            uint256 deltaPrice = (trancheParameters[_trancheNum].trancheACurrentRPS).mul(deltaTime);
             trancheParameters[_trancheNum].storedTrancheAPrice = (trancheParameters[_trancheNum].storedTrancheAPrice).add(deltaPrice);
-            trancheParameters[_trancheNum].trancheALastActionBlock = block.number;
+            trancheParameters[_trancheNum].trancheALastActionTime = block.timestamp;
         }
         return trancheParameters[_trancheNum].storedTrancheAPrice;
     }
@@ -359,12 +376,12 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
     }
 
     /**
-     * @dev get RPB for a given percentage (expressed in 1e18)
+     * @dev get RPS for a given percentage (expressed in 1e18)
      * @param _trancheNum tranche number
-     * @return RPB for a fixed percentage
+     * @return RPS for a fixed percentage
      */
-    function getTrancheACurrentRPB(uint256 _trancheNum) external view returns (uint256) {
-        return trancheParameters[_trancheNum].trancheACurrentRPB;
+    function getTrancheACurrentRPS(uint256 _trancheNum) external view returns (uint256) {
+        return trancheParameters[_trancheNum].trancheACurrentRPS;
     }
 
     /**
@@ -374,9 +391,9 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
      */
     function calcRPBFromPercentage(uint256 _trancheNum) public returns (uint256) {
         // if normalized price in tranche A price, everything should be scaled to 1e18 
-        trancheParameters[_trancheNum].trancheACurrentRPB = trancheParameters[_trancheNum].storedTrancheAPrice
-            .mul(trancheParameters[_trancheNum].trancheAFixedPercentage).div(totalBlocksPerYear).div(1e18);
-        return trancheParameters[_trancheNum].trancheACurrentRPB;
+        trancheParameters[_trancheNum].trancheACurrentRPS = trancheParameters[_trancheNum].storedTrancheAPrice
+            .mul(trancheParameters[_trancheNum].trancheAFixedPercentage).div(SECONDS_PER_YEAR).div(1e18);
+        return trancheParameters[_trancheNum].trancheACurrentRPS;
     }
 
     /**
@@ -469,6 +486,101 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
         return tbPrice;
     }
 
+     
+    /**
+     * @dev set staking details for tranche A holders, with number, amount and time
+     * @param _trancheNum tranche number
+     * @param _account user's account
+     * @param _stkNum staking detail counter
+     * @param _amount amount of tranche A tokens
+     * @param _time time to be considered the deposit
+     */
+    function setTrAStakingDetails(uint256 _trancheNum, address _account, uint256 _stkNum, uint256 _amount, uint256 _time) external override onlyAdmins {
+        stakeCounterTrA[_account][_trancheNum] = _stkNum;
+        StakingDetails storage details = stakingDetailsTrancheA[_account][_trancheNum][_stkNum];
+        details.startTime = _time;
+        details.amount = _amount;
+    }
+
+    /**
+     * @dev when redemption occurs on tranche A, removing tranche A tokens from staking information (FIFO logic)
+     * @param _trancheNum tranche number
+     * @param _amount amount of redeemed tokens
+     */
+    function decreaseTrancheATokenFromStake(uint256 _trancheNum, uint256 _amount) internal {
+        uint256 senderCounter = stakeCounterTrA[msg.sender][_trancheNum];
+        uint256 tmpAmount = _amount;
+        for (uint i = 1; i <= senderCounter; i++) {
+            StakingDetails storage details = stakingDetailsTrancheA[msg.sender][_trancheNum][i];
+            if (details.amount > 0) {
+                if (details.amount <= tmpAmount) {
+                    tmpAmount = tmpAmount.sub(details.amount);
+                    details.amount = 0;
+                } else {
+                    details.amount = details.amount.sub(tmpAmount);
+                    tmpAmount = 0;
+                }
+            }
+            if (tmpAmount == 0)
+                break;
+        }
+    }
+
+    function getSingleTrancheUserStakeCounterTrA(address _user, uint256 _trancheNum) external view override returns (uint256) {
+        return stakeCounterTrA[_user][_trancheNum];
+    }
+
+    function getSingleTrancheUserSingleStakeDetailsTrA(address _user, uint256 _trancheNum, uint256 _num) external view override returns (uint256, uint256) {
+        return (stakingDetailsTrancheA[_user][_trancheNum][_num].startTime, stakingDetailsTrancheA[_user][_trancheNum][_num].amount);
+    }
+
+    /**
+     * @dev set staking details for tranche B holders, with number, amount and time
+     * @param _trancheNum tranche number
+     * @param _account user's account
+     * @param _stkNum staking detail counter
+     * @param _amount amount of tranche B tokens
+     * @param _time time to be considered the deposit
+     */
+    function setTrBStakingDetails(uint256 _trancheNum, address _account, uint256 _stkNum, uint256 _amount, uint256 _time) external override onlyAdmins {
+        stakeCounterTrB[_account][_trancheNum] = _stkNum;
+        StakingDetails storage details = stakingDetailsTrancheB[_account][_trancheNum][_stkNum];
+        details.startTime = _time;
+        details.amount = _amount; 
+    }
+    
+    /**
+     * @dev when redemption occurs on tranche B, removing tranche B tokens from staking information (FIFO logic)
+     * @param _trancheNum tranche number
+     * @param _amount amount of redeemed tokens
+     */
+    function decreaseTrancheBTokenFromStake(uint256 _trancheNum, uint256 _amount) internal {
+        uint256 senderCounter = stakeCounterTrB[msg.sender][_trancheNum];
+        uint256 tmpAmount = _amount;
+        for (uint i = 1; i <= senderCounter; i++) {
+            StakingDetails storage details = stakingDetailsTrancheB[msg.sender][_trancheNum][i];
+            if (details.amount > 0) {
+                if (details.amount <= tmpAmount) {
+                    tmpAmount = tmpAmount.sub(details.amount);
+                    details.amount = 0;
+                } else {
+                    details.amount = details.amount.sub(tmpAmount);
+                    tmpAmount = 0;
+                }
+            }
+            if (tmpAmount == 0)
+                break;
+        }
+    }
+
+    function getSingleTrancheUserStakeCounterTrB(address _user, uint256 _trancheNum) external view override returns (uint256) {
+        return stakeCounterTrB[_user][_trancheNum];
+    }
+
+    function getSingleTrancheUserSingleStakeDetailsTrB(address _user, uint256 _trancheNum, uint256 _num) external view override returns (uint256, uint256) {
+        return (stakingDetailsTrancheB[_user][_trancheNum][_num].startTime, stakingDetailsTrancheB[_user][_trancheNum][_num].amount);
+    }
+
     /**
      * @dev buy Tranche A Tokens
      * @param _trancheNum tranche number
@@ -476,8 +588,10 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
      */
     function buyTrancheAToken(uint256 _trancheNum, uint256 _amount) external payable nonReentrant {
         require(trancheDepositEnabled[_trancheNum], "JCream: tranche deposit disabled");
-        uint256 prevCrTokenBalance = getTokenBalance(trancheAddresses[_trancheNum].crTokenAddress);
-        if (trancheAddresses[_trancheNum].buyerCoinAddress == address(0)){
+        address origToken = trancheAddresses[_trancheNum].buyerCoinAddress;
+        address crToken = trancheAddresses[_trancheNum].crTokenAddress;
+        uint256 prevCrTokenBalance = getTokenBalance(crToken);
+        if (origToken == address(0)){
             require(msg.value == _amount, "JCream: msg.value not equal to amount");
             //Transfer ETH from msg.sender to protocol;
             TransferETHHelper.safeTransferETH(address(this), _amount);
@@ -485,13 +599,13 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
             crEthToken.mint{value: _amount}();
         } else {
             // check approve
-            require(IERC20Upgradeable(trancheAddresses[_trancheNum].buyerCoinAddress).allowance(msg.sender, address(this)) >= _amount, "JCream: allowance failed buying tranche A");
+            require(IERC20Upgradeable(origToken).allowance(msg.sender, address(this)) >= _amount, "JCream: allowance failed buying tranche A");
             //Transfer DAI from msg.sender to protocol;
-            SafeERC20Upgradeable.safeTransferFrom(IERC20Upgradeable(trancheAddresses[_trancheNum].buyerCoinAddress), msg.sender, address(this), _amount);
+            SafeERC20Upgradeable.safeTransferFrom(IERC20Upgradeable(origToken), msg.sender, address(this), _amount);
             // transfer DAI to Coompound receiving cDai
-            sendErc20ToCream(trancheAddresses[_trancheNum].buyerCoinAddress, _amount);
+            sendErc20ToCream(origToken, _amount);
         }
-        uint256 newCrTokenBalance = getTokenBalance(trancheAddresses[_trancheNum].crTokenAddress);
+        uint256 newCrTokenBalance = getTokenBalance(crToken);
         // set amount of tokens to be minted calculate taToken amount via taToken price
         setTrancheAExchangeRate(_trancheNum);
         uint256 taAmount;
@@ -503,6 +617,11 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
             //Mint trancheA tokens and send them to msg.sender;
             IJTrancheTokens(trancheAddresses[_trancheNum].ATrancheAddress).mint(msg.sender, taAmount);
         }
+
+        stakeCounterTrA[msg.sender][_trancheNum] = stakeCounterTrA[msg.sender][_trancheNum].add(1);
+        StakingDetails storage details = stakingDetailsTrancheA[msg.sender][_trancheNum][stakeCounterTrA[msg.sender][_trancheNum]];
+        details.startTime = block.timestamp;
+        details.amount = taAmount;
         
         lastActivity[msg.sender] = block.number;
         emit TrancheATokenMinted(_trancheNum, msg.sender, _amount, taAmount);
@@ -516,8 +635,9 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
     function redeemTrancheAToken(uint256 _trancheNum, uint256 _amount) external nonReentrant {
         require((block.number).sub(lastActivity[msg.sender]) >= redeemTimeout, "JCream: redeem timeout not expired on tranche A");
         // check approve
+        // address aTranche = trancheAddresses[_trancheNum].ATrancheAddress;
         require(IERC20Upgradeable(trancheAddresses[_trancheNum].ATrancheAddress).allowance(msg.sender, address(this)) >= _amount, "JCream: allowance failed redeeming tranche A");
-        //Transfer DAI from msg.sender to protocol;
+        //Transfer aDAI from msg.sender to protocol;
         SafeERC20Upgradeable.safeTransferFrom(IERC20Upgradeable(trancheAddresses[_trancheNum].ATrancheAddress), msg.sender, address(this), _amount);
 
         uint256 oldBal;
@@ -525,41 +645,53 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
         uint256 userAmount;
         uint256 feesAmount;
         setTrancheAExchangeRate(_trancheNum);
+
+        address origToken = trancheAddresses[_trancheNum].buyerCoinAddress;
+        address crToken = trancheAddresses[_trancheNum].crTokenAddress;
+        uint16 redeemPerc = trancheParameters[_trancheNum].redemptionPercentage;
+
         // if normalized price in tranche A price, everything should be scaled to 1e18 
         uint256 taAmount = _amount.mul(trancheParameters[_trancheNum].storedTrancheAPrice).div(1e18);
         uint256 diffDec = uint256(18).sub(uint256(trancheParameters[_trancheNum].underlyingDecimals));
         uint256 normAmount = taAmount.div(10 ** diffDec);
-        uint256 crTokenBal = getTokenBalance(trancheAddresses[_trancheNum].crTokenAddress); // needed for emergency
-        if (trancheAddresses[_trancheNum].buyerCoinAddress == address(0)) {
-            SafeERC20Upgradeable.safeTransfer(IERC20Upgradeable(trancheAddresses[_trancheNum].crTokenAddress), address(ethGateway), crTokenBal);
+        uint256 crTokenBal = getTokenBalance(crToken); // needed for emergency
+        if (origToken == address(0)) {
+            SafeERC20Upgradeable.safeTransfer(IERC20Upgradeable(crToken), address(ethGateway), crTokenBal);
             // calculate taAmount via cETH price
             oldBal = getEthBalance();
             ethGateway.withdrawETH(normAmount, address(this), false, crTokenBal);
             diffBal = getEthBalance().sub(oldBal);
-            userAmount = diffBal.mul(trancheParameters[_trancheNum].redemptionPercentage).div(PERCENT_DIVIDER);
+            userAmount = diffBal.mul(redeemPerc).div(PERCENT_DIVIDER);
             TransferETHHelper.safeTransferETH(msg.sender, userAmount);
-            if (diffBal != userAmount) {
+            feesAmount = diffBal.sub(userAmount);
+            if (diffBal != userAmount && feesAmount > 0) {
                 // transfer fees to JFeesCollector
-                feesAmount = diffBal.sub(userAmount);
                 TransferETHHelper.safeTransferETH(feesCollectorAddress, feesAmount);
             }   
         } else {
             // calculate taAmount via cToken price
-            oldBal = getTokenBalance(trancheAddresses[_trancheNum].buyerCoinAddress);
-            uint256 creamRetCode = redeemCErc20Tokens(trancheAddresses[_trancheNum].buyerCoinAddress, normAmount, false);
+            oldBal = getTokenBalance(origToken);
+            uint256 creamRetCode = redeemCErc20Tokens(origToken, normAmount, false);
             if(creamRetCode != 0) {
                 // emergency: send all ctokens balance to cream 
-                redeemCErc20Tokens(trancheAddresses[_trancheNum].buyerCoinAddress, crTokenBal, true);  
+                redeemCErc20Tokens(origToken, crTokenBal, true);  
             }
-            diffBal = getTokenBalance(trancheAddresses[_trancheNum].buyerCoinAddress).sub(oldBal);
-            userAmount = diffBal.mul(trancheParameters[_trancheNum].redemptionPercentage).div(PERCENT_DIVIDER);
-            SafeERC20Upgradeable.safeTransfer(IERC20Upgradeable(trancheAddresses[_trancheNum].buyerCoinAddress), msg.sender, userAmount);
-            if (diffBal != userAmount) {
+            diffBal = getTokenBalance(origToken).sub(oldBal);
+            userAmount = diffBal.mul(redeemPerc).div(PERCENT_DIVIDER);
+            SafeERC20Upgradeable.safeTransfer(IERC20Upgradeable(origToken), msg.sender, userAmount);
+            feesAmount = diffBal.sub(userAmount);
+            if (diffBal != userAmount && feesAmount > 0) {
                 // transfer fees to JFeesCollector
-                feesAmount = diffBal.sub(userAmount);
-                SafeERC20Upgradeable.safeTransfer(IERC20Upgradeable(trancheAddresses[_trancheNum].buyerCoinAddress), feesCollectorAddress, feesAmount);
+                SafeERC20Upgradeable.safeTransfer(IERC20Upgradeable(origToken), feesCollectorAddress, feesAmount);
             }
         }
+
+        // claim and transfer rewards to msg.sender. Be sure to wait for this function to be completed! 
+        bool rewClaimCompleted = IIncentivesController(incentivesControllerAddress).claimRewardsAllMarkets(msg.sender);
+
+        // decrease tokens after claiming rewards
+        if (rewClaimCompleted && _amount > 0)
+            decreaseTrancheATokenFromStake(_trancheNum, _amount);
      
         IJTrancheTokens(trancheAddresses[_trancheNum].ATrancheAddress).burn(_amount);
         lastActivity[msg.sender] = block.number;
@@ -573,9 +705,11 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
      */
     function buyTrancheBToken(uint256 _trancheNum, uint256 _amount) external payable nonReentrant {
         require(trancheDepositEnabled[_trancheNum], "JCream: tranche deposit disabled");
-        uint256 prevCrTokenBalance = getTokenBalance(trancheAddresses[_trancheNum].crTokenAddress);
+        address origToken = trancheAddresses[_trancheNum].buyerCoinAddress;
+        address crToken = trancheAddresses[_trancheNum].crTokenAddress;
+        uint256 prevCrTokenBalance = getTokenBalance(crToken);
         // if eth, ignore _amount parameter and set it to msg.value
-        if (trancheAddresses[_trancheNum].buyerCoinAddress == address(0)) {
+        if (origToken == address(0)) {
             require(msg.value == _amount, "JCream: msg.value not equal to amount");
             //_amount = msg.value;
         }
@@ -586,24 +720,30 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
         uint256 diffDec = uint256(18).sub(uint256(trancheParameters[_trancheNum].underlyingDecimals));
         uint256 normAmount = _amount.mul(10 ** diffDec);
         uint256 tbAmount = normAmount.mul(1e18).div(getTrancheBExchangeRate(_trancheNum, _amount));
-        if (trancheAddresses[_trancheNum].buyerCoinAddress == address(0)) {
+        if (origToken == address(0)) {
             TransferETHHelper.safeTransferETH(address(this), _amount);
             // transfer ETH to Coompound receiving cETH
             crEthToken.mint{value: _amount}();
         } else {
             // check approve
-            require(IERC20Upgradeable(trancheAddresses[_trancheNum].buyerCoinAddress).allowance(msg.sender, address(this)) >= _amount, "JCream: allowance failed buying tranche B");
+            require(IERC20Upgradeable(origToken).allowance(msg.sender, address(this)) >= _amount, "JCream: allowance failed buying tranche B");
             //Transfer DAI from msg.sender to protocol;
-            SafeERC20Upgradeable.safeTransferFrom(IERC20Upgradeable(trancheAddresses[_trancheNum].buyerCoinAddress), msg.sender, address(this), _amount);
+            SafeERC20Upgradeable.safeTransferFrom(IERC20Upgradeable(origToken), msg.sender, address(this), _amount);
             // transfer DAI to Couompound receiving cDai
-            sendErc20ToCream(trancheAddresses[_trancheNum].buyerCoinAddress, _amount);
+            sendErc20ToCream(origToken, _amount);
         }
-        uint256 newCrTokenBalance = getTokenBalance(trancheAddresses[_trancheNum].crTokenAddress);
+        uint256 newCrTokenBalance = getTokenBalance(crToken);
         if (newCrTokenBalance > prevCrTokenBalance) {
             //Mint trancheB tokens and send them to msg.sender;
             IJTrancheTokens(trancheAddresses[_trancheNum].BTrancheAddress).mint(msg.sender, tbAmount);
         } else 
             tbAmount = 0;
+
+        stakeCounterTrB[msg.sender][_trancheNum] = stakeCounterTrB[msg.sender][_trancheNum].add(1);
+        StakingDetails storage details = stakingDetailsTrancheB[msg.sender][_trancheNum][stakeCounterTrB[msg.sender][_trancheNum]];
+        details.startTime = block.timestamp;
+        details.amount = tbAmount;
+
         lastActivity[msg.sender] = block.number;
         emit TrancheBTokenMinted(_trancheNum, msg.sender, _amount, tbAmount);
     }
@@ -626,38 +766,50 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
         uint256 feesAmount;
         // refresh value for tranche A
         setTrancheAExchangeRate(_trancheNum);
+
+        address origToken = trancheAddresses[_trancheNum].buyerCoinAddress;
+        address crToken = trancheAddresses[_trancheNum].crTokenAddress;
+        uint16 redeemPerc = trancheParameters[_trancheNum].redemptionPercentage;
+
         // get tranche B exchange rate
         // if normalized price in tranche B price, everything should be scaled to 1e18 
         uint256 tbAmount = _amount.mul(getTrancheBExchangeRate(_trancheNum, 0)).div(1e18);
         uint256 diffDec = uint256(18).sub(uint256(trancheParameters[_trancheNum].underlyingDecimals));
         uint256 normAmount = tbAmount.div(10 ** diffDec);
-        uint256 crTokenBal = getTokenBalance(trancheAddresses[_trancheNum].crTokenAddress); // needed for emergency
-        if (trancheAddresses[_trancheNum].buyerCoinAddress == address(0)){
-            SafeERC20Upgradeable.safeTransfer(IERC20Upgradeable(trancheAddresses[_trancheNum].crTokenAddress), address(ethGateway), crTokenBal);
+        uint256 crTokenBal = getTokenBalance(crToken); // needed for emergency
+        if (origToken == address(0)){
+            SafeERC20Upgradeable.safeTransfer(IERC20Upgradeable(crToken), address(ethGateway), crTokenBal);
             // calculate tbETH amount via cETH price
             oldBal = getEthBalance();
             ethGateway.withdrawETH(normAmount, address(this), false, crTokenBal);
             diffBal = getEthBalance().sub(oldBal);
-            userAmount = diffBal.mul(trancheParameters[_trancheNum].redemptionPercentage).div(PERCENT_DIVIDER);
+            userAmount = diffBal.mul(redeemPerc).div(PERCENT_DIVIDER);
             TransferETHHelper.safeTransferETH(msg.sender, userAmount);
-            if (diffBal != userAmount) {
+            feesAmount = diffBal.sub(userAmount);
+            if (diffBal != userAmount && feesAmount > 0) {
                 // transfer fees to JFeesCollector
-                feesAmount = diffBal.sub(userAmount);
                 TransferETHHelper.safeTransferETH(feesCollectorAddress, feesAmount);
             }   
         } else {
             // calculate taToken amount via cToken price
-            oldBal = getTokenBalance(trancheAddresses[_trancheNum].buyerCoinAddress);
-            require(redeemCErc20Tokens(trancheAddresses[_trancheNum].buyerCoinAddress, normAmount, false) == 0, "JCream: incorrect answer from cToken");
-            diffBal = getTokenBalance(trancheAddresses[_trancheNum].buyerCoinAddress);
-            userAmount = diffBal.mul(trancheParameters[_trancheNum].redemptionPercentage).div(PERCENT_DIVIDER);
-            SafeERC20Upgradeable.safeTransfer(IERC20Upgradeable(trancheAddresses[_trancheNum].buyerCoinAddress), msg.sender, userAmount);
-            if (diffBal != userAmount) {
+            oldBal = getTokenBalance(origToken);
+            require(redeemCErc20Tokens(origToken, normAmount, false) == 0, "JCream: incorrect answer from cToken");
+            diffBal = getTokenBalance(origToken);
+            userAmount = diffBal.mul(redeemPerc).div(PERCENT_DIVIDER);
+            SafeERC20Upgradeable.safeTransfer(IERC20Upgradeable(origToken), msg.sender, userAmount);
+            feesAmount = diffBal.sub(userAmount);
+            if (diffBal != userAmount && feesAmount > 0) {
                 // transfer fees to JFeesCollector
-                feesAmount = diffBal.sub(userAmount);
-                SafeERC20Upgradeable.safeTransfer(IERC20Upgradeable(trancheAddresses[_trancheNum].buyerCoinAddress), feesCollectorAddress, feesAmount);
+                SafeERC20Upgradeable.safeTransfer(IERC20Upgradeable(origToken), feesCollectorAddress, feesAmount);
             }   
         }
+
+        // claim and transfer rewards to msg.sender. Be sure to wait for this function to be completed! 
+        bool rewClaimCompleted = IIncentivesController(incentivesControllerAddress).claimRewardsAllMarkets(msg.sender);
+
+        // decrease tokens after claiming rewards
+        if (rewClaimCompleted && _amount > 0)
+            decreaseTrancheBTokenFromStake(_trancheNum, _amount);
         
         IJTrancheTokens(trancheAddresses[_trancheNum].BTrancheAddress).burn(_amount);
         lastActivity[msg.sender] = block.number;
@@ -674,17 +826,18 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
         uint256 oldBal;
         uint256 diffBal;
         uint256 crTokenBal = getTokenBalance(trancheAddresses[_trancheNum].crTokenAddress); // needed for emergency
-        if (trancheAddresses[_trancheNum].buyerCoinAddress == address(0)) {
+        address origToken = trancheAddresses[_trancheNum].buyerCoinAddress;
+        if (origToken == address(0)) {
             oldBal = getEthBalance();
             ethGateway.withdrawETH(_crTokenAmount, address(this), true, crTokenBal);
             diffBal = getEthBalance().sub(oldBal);
             TransferETHHelper.safeTransferETH(feesCollectorAddress, diffBal);
         } else {
             // calculate taToken amount via cToken price
-            oldBal = getTokenBalance(trancheAddresses[_trancheNum].buyerCoinAddress);
-            require(redeemCErc20Tokens(trancheAddresses[_trancheNum].buyerCoinAddress, _crTokenAmount, true) == 0, "JCream: incorrect answer from cToken");
-            diffBal = getTokenBalance(trancheAddresses[_trancheNum].buyerCoinAddress);
-            SafeERC20Upgradeable.safeTransfer(IERC20Upgradeable(trancheAddresses[_trancheNum].buyerCoinAddress), feesCollectorAddress, diffBal);
+            oldBal = getTokenBalance(origToken);
+            require(redeemCErc20Tokens(origToken, _crTokenAmount, true) == 0, "JCream: incorrect answer from cToken");
+            diffBal = getTokenBalance(origToken);
+            SafeERC20Upgradeable.safeTransfer(IERC20Upgradeable(origToken), feesCollectorAddress, diffBal);
         }
     }
 
@@ -740,9 +893,5 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
             SafeERC20Upgradeable.safeTransfer(IERC20Upgradeable(creamTokenAddress), _receiver, amount);
         }
     }
-
-    function emergencyRemoveTokensFromTranche(address _trancheAddress, address _token, address _receiver, uint256 _amount) external onlyAdmins nonReentrant {
-        IJTrancheTokens(_trancheAddress).emergencyTokenTransfer(_token, _receiver, _amount);
-    } 
 
 }

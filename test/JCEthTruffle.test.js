@@ -142,11 +142,11 @@ contract("JCream", function (accounts) {
     console.log((await jCreamContract.getCreamPrice(0)).toString());
     trPar = await jCreamContract.trancheParameters(0);
     console.log("param tranche A: " + JSON.stringify(trPar));
-    console.log("rpb tranche A: " + await jCreamContract.getTrancheACurrentRPB(0));
+    console.log("rpb tranche A: " + await jCreamContract.getTrancheACurrentRPS(0));
     tx = await jCreamContract.calcRPBFromPercentage(0, {
       from: user1
     });
-    console.log("rpb tranche A: " + await jCreamContract.getTrancheACurrentRPB(0));
+    console.log("rpb tranche A: " + await jCreamContract.getTrancheACurrentRPS(0));
     trAPrice = await jCreamContract.getTrancheAExchangeRate(0, {
       from: user1
     });

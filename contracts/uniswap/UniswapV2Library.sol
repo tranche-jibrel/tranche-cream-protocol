@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.6.12;
+pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import './IUniswapV2Pair.sol';
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import '../interfaces//IUniswapV2Pair.sol';
 
 library UniswapV2Library {
     using SafeMath for uint;
@@ -19,13 +19,13 @@ library UniswapV2Library {
     // calculates the CREATE2 address for a pair without making any external calls
     function pairFor(address factory, address tokenA, address tokenB) internal pure returns (address pair) {
         (address token0, address token1) = sortTokens(tokenA, tokenB);
-        pair = address(uint(keccak256(abi.encodePacked(
+        pair = address(uint160(uint(keccak256(abi.encodePacked(
                 hex'ff',
                 factory,
                 keccak256(abi.encodePacked(token0, token1)),
-                //hex'96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f' // init code hash original to be retored when deploying on blockchain
-                hex'878d74c4b4010859634c4a76446b54f077d26b0d56d1bbf5fa88863dda1edd77' // init code hash for tests
-            ))));
+                hex'96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f' // init code hash original to be retored when deploying on blockchain
+                // hex'878d74c4b4010859634c4a76446b54f077d26b0d56d1bbf5fa88863dda1edd77' // init code hash for tests
+            )))));
     }
 
     // fetches and sorts the reserves for a pair

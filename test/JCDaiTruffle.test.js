@@ -35,6 +35,9 @@ const JTrancheBToken = artifacts.require('JTrancheBToken');
 const MYERC20_TOKEN_SUPPLY = 5000000;
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
+const fromWei = (x) => fromWei(x.toString());
+const toWei = (x) => toWei(x.toString());
+
 let daiContract, cEtherContract, cERC20Contract, jFCContract, jATContract, jTrDeplContract, jCreamContract;
 let ethTrAContract, ethTrBContract, daiTrAContract, daiTrBContract;
 let tokenOwner, user1;
@@ -45,6 +48,7 @@ contract("JCream", function (accounts) {
     //accounts = await web3.eth.getAccounts();
     tokenOwner = accounts[0];
     user1 = accounts[1];
+    user2 = accounts[2];
     console.log(tokenOwner);
     console.log(await web3.eth.getBalance(tokenOwner));
     console.log(await web3.eth.getBalance(user1));
@@ -138,18 +142,17 @@ contract("JCream", function (accounts) {
     console.log("is Dai allowed in JCream: " + await jCreamContract.isCTokenAllowed(daiContract.address));
     console.log((await jCreamContract.getCreamPrice(1)).toString());
     trPar = await jCreamContract.trancheParameters(1);
-    console.log("param tranche A: " + JSON.stringify(trPar));
-    console.log("rpb tranche A: " + await jCreamContract.getTrancheACurrentRPB(1));
+    console.log("param tranche A: " + JSON.stringify(trPar, ["trancheAFixedPercentage", "trancheALastActionTime", "storedTrancheAPrice", "trancheACurrentRPS", "crTokenDecimals", "underlyingDecimals"]));
+    console.log("rpb tranche A: " + await jCreamContract.getTrancheACurrentRPS(1));
     tx = await jCreamContract.calcRPBFromPercentage(1, {
       from: user1
     });
-    console.log("rpb tranche A: " + await jCreamContract.getTrancheACurrentRPB(1));
+    console.log("rpb tranche A: " + await jCreamContract.getTrancheACurrentRPS(1));
     trAPrice = await jCreamContract.getTrancheAExchangeRate(1, {
       from: user1
     });
     console.log("price tranche A: " + trAPrice);
-    trPar = await jCreamContract.trancheParameters(1);
-    console.log("param tranche A: " + JSON.stringify(trPar));
+
     trParams = await jCreamContract.trancheAddresses(1);
     expect(trParams.buyerCoinAddress).to.be.equal(daiContract.address);
     expect(trParams.crTokenAddress).to.be.equal(cERC20Contract.address);
@@ -169,6 +172,25 @@ contract("JCream", function (accounts) {
     console.log("Cream Price: " + await jCreamContract.getCreamPrice(1));
     console.log("Cream TrA Value: " + web3.utils.fromWei(await jCreamContract.getTrAValue(1), "ether"));
     console.log("Cream total Value: " + web3.utils.fromWei(await jCreamContract.getTotalValue(1), "ether"));
+  });
+
+  it('transferring Tranche A tokens should also transfer staking details', async function () {
+    bal1 = await daiTrAContract.balanceOf(user1)
+    console.log("user1 trA Balance: " + web3.utils.fromWei(bal1) + " ayDai")
+    stkDetails = await jCreamContract.stakingDetailsTrancheA(user1, 1, 1);
+    console.log("user1 stkDetails, startTime: " + stkDetails[0].toString() + ", amount: " + stkDetails[1].toString() )
+    bal2 = await daiTrAContract.balanceOf(user2)
+    expect(bal2.toString()).to.be.equal("0")
+    
+    await daiTrAContract.transfer(user2, web3.utils.toWei("5"), {from: user1});
+    bal1 = await daiTrAContract.balanceOf(user1)
+    bal2 = await daiTrAContract.balanceOf(user2)
+    console.log("user1 trA Balance: " + web3.utils.fromWei(bal1) + " ayDai")
+    stkDetails = await jCreamContract.stakingDetailsTrancheA(user1, 1, 1);
+    console.log("user1 stkDetails, startTime: " + stkDetails[0].toString() + ", amount: " + stkDetails[1].toString() )
+    console.log("user2 trA Balance: " + web3.utils.fromWei(bal2) + " ayDai")
+    stkDetails = await jCreamContract.stakingDetailsTrancheA(user2, 1, 1);
+    console.log("user2 stkDetails, startTime: " + stkDetails[0].toString() + ", amount: " + stkDetails[1].toString() )
   });
 
   it("user1 buys some token daiTrB", async function () {

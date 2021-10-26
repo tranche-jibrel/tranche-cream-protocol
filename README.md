@@ -39,6 +39,8 @@ or to test a single file:
 truffle run coverage --network development --file="test/JCTruffle.test.js"    
 ```
 
+Test coverage on JCream contract: 82.54%
+
 
 [(Back to top)](#Cream-Tranche-Protocol)
 
@@ -96,62 +98,52 @@ Note: if ETH tranche is deployed, please deploy ETHGateway contract without a pr
     <tbody>
         <tr>
             <td>ETHGateway</td>
-            <td><code>2.94</code></td>
+            <td><code>2.64</code></td>
             <td>Ethereum gateway, useful when dealing with ethers</td>
         </tr>
         <tr>
             <td>JAdminTools</td>
-            <td><code>2.96</code></td>
+            <td><code>2.27</code></td>
             <td>Contract for administrative roles control (implementation), allowing the identification of addresses when dealing with reserved methods.</td>
         </tr>
         <tr>
             <td>JAdminToolsStorage</td>
-            <td><code>0.87</code></td>
+            <td><code>0.72</code></td>
             <td>Contract for administrative roles control (storage)</td>
         </tr>
         <tr>
             <td>JCream</td>
-            <td><code>22.38</code></td>
-            <td>Core contract protocol (implementation). It is responsible to make all actions to give the exact amount of tranche token to users, connecting with Cream to have interest rates and other informations to give tokens the price they should have block by block. It claims extra token from Cream (if any), sending them to Fees collector contract, that changes all fees and extra tokens into new interests for token holders. It also opens new tranches, and, via Tranche Deployer contract, it deploys new tranche tokens.</td>
+            <td><code>21.69</code></td>
+            <td>Core contract protocol (implementation). It is responsible to make all actions to give the exact amount of tranche token to users, connecting with Cream to have interest rates and other informations to give tokens the price they should have block by block. It claims extra token from Cream (if any), sending them to Fees collector contract, that changes all fees and extra tokens into new interests for token holders. It deploys new tranche tokens via Tranche Deployer contract.</td>
         </tr>
         <tr>
             <td>JCreamStorage</td>
-            <td><code>1.71</code></td>
+            <td><code>1.89</code></td>
             <td>Core contract protocol (storage)</td>
         </tr>
         <tr>
             <td>JFeesCollector</td>
-            <td><code>10.40</code></td>
+            <td><code>9.28</code></td>
             <td>Fees collector and uniswap swapper (implementation), it changes all fees and extra tokens into new interests for token holders, sending back extra amount to Cream protocol contract</td>
         </tr>
         <tr>
             <td>JFeesCollectorStorage</td>
-            <td><code>0.96</code></td>
+            <td><code>0.82</code></td>
             <td>Fees collector and uniswap swapper (storage)</td>
         </tr>
         <tr>
             <td>JTrancheAToken</td>
-            <td><code>10.18</code></td>
+            <td><code>6.83</code></td>
             <td>Tranche A token (implementation), with a non decreasing price, making possible for holders to have a fixed interest percentage.</td>
         </tr>
         <tr>
-            <td>JTrancheATokenStorage</td>
-            <td><code>0.44</code></td>
-            <td>Tranche A token (storage)</td>
-        </tr>
-        <tr>
             <td>JTrancheBToken</td>
-            <td><code>10.18</code></td>
+            <td><code>6.83</code></td>
             <td>Tranche B token (implementation), with a floating price, making possible for holders to have a variable interest percentage.</td>
         </tr>
         <tr>
-            <td>JTrancheBTokenStorage</td>
-            <td><code>0.44</code></td>
-            <td>Tranche B token (storage)</td>
-        </tr>
-        <tr>
             <td>JTranchesDeployer</td>
-            <td><code>23.70</code></td>
+            <td><code>17.77</code></td>
             <td>Tranche A & B token deployer (implementation): this contract deploys tranche tokens everytime a new tranche is opened by the core protocol contract</td>
         </tr>
         <tr>

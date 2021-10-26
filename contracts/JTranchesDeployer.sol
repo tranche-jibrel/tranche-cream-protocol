@@ -4,10 +4,10 @@
  * @summary: Jibrel Cream Tranche Deployer
  * @author: Jibrel Team
  */
-pragma solidity 0.6.12;
+pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "./interfaces/IJTranchesDeployer.sol";
 import "./JTrancheAToken.sol";
 import "./JTrancheBToken.sol";
@@ -32,25 +32,17 @@ contract JTranchesDeployer is OwnableUpgradeable, JTranchesDeployerStorage, IJTr
 
     function deployNewTrancheATokens(string memory _nameA, 
             string memory _symbolA, 
-            address _sender, 
-            address _rewardToken) external override onlyProtocol returns (address) {
-        JTrancheAToken jTrancheA = new JTrancheAToken();
-        jTrancheA.initialize(_nameA, _symbolA);
+            uint256 _trNum) external override onlyProtocol returns (address) {
+        JTrancheAToken jTrancheA = new JTrancheAToken(_nameA, _symbolA, _trNum);
         jTrancheA.setJCreamMinter(msg.sender); 
-        jTrancheA.setRewardTokenAddress(_rewardToken);
-        jTrancheA.transferOwnership(_sender);
         return address(jTrancheA);
     }
 
     function deployNewTrancheBTokens(string memory _nameB, 
             string memory _symbolB, 
-            address _sender, 
-            address _rewardToken) external override onlyProtocol returns (address) {
-        JTrancheBToken jTrancheB = new JTrancheBToken();
-        jTrancheB.initialize(_nameB, _symbolB);
+            uint256 _trNum) external override onlyProtocol returns (address) {
+        JTrancheBToken jTrancheB = new JTrancheBToken(_nameB, _symbolB, _trNum);
         jTrancheB.setJCreamMinter(msg.sender);
-        jTrancheB.setRewardTokenAddress(_rewardToken);
-        jTrancheB.transferOwnership(_sender);
         return address(jTrancheB);
     }
 

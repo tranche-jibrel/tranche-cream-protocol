@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.6.12;
+pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 
 contract CErc20 is OwnableUpgradeable, ERC20Upgradeable {
     using SafeMathUpgradeable for uint256;
@@ -62,7 +63,7 @@ contract CErc20 is OwnableUpgradeable, ERC20Upgradeable {
     }
 
     function redeemUnderlying(uint redeemAmount) external returns (uint) {
-        return redeemFresh(msg.sender, 0, redeemAmount);
+        return redeemFresh(payable(msg.sender), 0, redeemAmount);
     }
 
     function setExchangeRateStored(uint256 rate) external {

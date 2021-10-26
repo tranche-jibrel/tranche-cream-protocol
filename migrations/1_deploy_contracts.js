@@ -1,6 +1,5 @@
 require('dotenv').config();
 const { deployProxy, upgradeProxy } = require('@openzeppelin/truffle-upgrades');
-var { abi } = require('../build/contracts/myERC20.json');
 
 var myERC20 = artifacts.require("./mocks/myERC20.sol");
 var mySlice = artifacts.require("./mocks/mySlice.sol");
@@ -11,6 +10,7 @@ var JAdminTools = artifacts.require("./JAdminTools.sol");
 var JFeesCollector = artifacts.require("./JFeesCollector.sol");
 var JCream = artifacts.require('./JCream');
 var JTranchesDeployer = artifacts.require('./JTranchesDeployer');
+var IncentivesController = artifacts.require('./IncentivesController');
 
 var JTrancheAToken = artifacts.require('./JTrancheAToken');
 var JTrancheBToken = artifacts.require('./JTrancheBToken');
@@ -56,6 +56,8 @@ module.exports = async (deployer, network, accounts) => {
       CREAM_ADDRESS, TROLLER_ADDRESS, mySLICEinstance.address], { from: factoryOwner });
     console.log('JCream Deployed: ', JCinstance.address);
 
+    await JATinstance.addAdmin(JCinstance.address, { from: factoryOwner })
+
     await deployer.deploy(EthGateway, mycEthinstance.address, JCinstance.address);
     const JEGinstance = await EthGateway.deployed();
     console.log('ETHGateway Deployed: ', JEGinstance.address);
@@ -70,18 +72,25 @@ module.exports = async (deployer, network, accounts) => {
     await JCinstance.addTrancheToProtocol(ZERO_ADDRESS, "jEthTrancheAToken", "JEA", "jEthTrancheBToken", "JEB", web3.utils.toWei("0.04", "ether"), 18, 18, { from: factoryOwner });
     trParams = await JCinstance.trancheAddresses(0);
     let EthTrA = await JTrancheAToken.at(trParams.ATrancheAddress);
-    console.log("Eth Tranche A Token Address: " + EthTrA.address);
+    console.log("ETH Tranche A Token Address: " + EthTrA.address);
     let EthTrB = await JTrancheBToken.at(trParams.BTrancheAddress);
-    console.log("Eth Tranche B Token Address: " + EthTrB.address);
+    console.log("ETH Tranche B Token Address: " + EthTrB.address);
+
     await JCinstance.setTrancheDeposit(0, true, { from: factoryOwner });
 
     await JCinstance.addTrancheToProtocol(myDAIinstance.address, "jDaiTrancheAToken", "JDA", "jDaiTrancheBToken", "JDB", web3.utils.toWei("0.02", "ether"), 18, 18, { from: factoryOwner });
     trParams = await JCinstance.trancheAddresses(1);
     let DaiTrA = await JTrancheAToken.at(trParams.ATrancheAddress);
-    console.log("Eth Tranche A Token Address: " + DaiTrA.address);
+    console.log("DAI Tranche A Token Address: " + DaiTrA.address);
     let DaiTrB = await JTrancheBToken.at(trParams.BTrancheAddress);
-    console.log("Eth Tranche B Token Address: " + DaiTrB.address);
+    console.log("DAI Tranche B Token Address: " + DaiTrB.address);
+
     await JCinstance.setTrancheDeposit(1, true, { from: factoryOwner });
+
+    const JIController = await deployProxy(IncentivesController, [], { from: factoryOwner });
+    console.log("Incentive controller mock: " + JIController.address);
+
+    await JCinstance.setincentivesControllerAddress(JIController.address);
 
   } else if (network == "kovan") {
     let { 
