@@ -17,30 +17,31 @@ var JTrancheBToken = artifacts.require('./JTrancheBToken');
 
 var EthGateway = artifacts.require('./ETHGateway');
 
-module.exports = async (deployer, network, accounts) => {
-  const MYERC20_TOKEN_SUPPLY = 5000000;
-  const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-  const CREAM_ADDRESS = "0xc00e94cb662c3520282e6f5717214004a7f26888";
-  const TROLLER_ADDRESS = "0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B";
-  //const daiRequest = 100 * Math.pow(10, 18);
-  //const DAI_REQUEST_HEX = "0x" + daiRequest.toString(16);
-  //const ethRpb = 1 * Math.pow(10, 9);
-  //const ETH_RPB_HEX = "0x" + ethRpb.toString(16);
+const MYERC20_TOKEN_SUPPLY = 5000000;
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
+const WETH_ADDRESS = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
+const DAI_ADDRESS = "0x6b175474e89094c44da98b954eedeac495271d0f";
+const CREAM_ADDRESS = "0x2ba592F78dB6436527729929AAf6c908497cB200";
+
+const crTROLLER_ADDRESS = "0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B";
+const cyTROLLER_ADDRESS = "0xAB1c342C7bf5Ec5F02ADEA1c2270670bCa144CbB";
+const crETH_ADDRESS = '0xD06527D5e56A3495252A528C4987003b712860eE'
+const cyWETH_ADDRESS = '0x41c84c0e2EE0b740Cf0d31F63f3B6F627DC6b393'
+const crDAI_ADDRESS = '0x92b767185fb3b04f881e3ac8e5b0662a027a1d9f'
+const cyDAI_ADDRESS = '0x8e595470Ed749b85C6F7669de83EAe304C2ec68F'
+
+module.exports = async (deployer, network, accounts) => {
   if (network == "development") {
     const tokenOwner = accounts[0];
 
-    const mySLICEinstance = await deployProxy(mySlice, [MYERC20_TOKEN_SUPPLY], { from: tokenOwner });
-    console.log('mySLICE Deployed: ', mySLICEinstance.address);
-
-    const myDAIinstance = await deployProxy(myERC20, [MYERC20_TOKEN_SUPPLY], { from: tokenOwner });
-    console.log('myDAI Deployed: ', myDAIinstance.address);
-
-    const mycEthinstance = await deployProxy(CEther, [], { from: tokenOwner });
-    console.log('myCEth Deployed: ', mycEthinstance.address);
-
-    const mycDaiinstance = await deployProxy(CErc20, [], { from: tokenOwner });
-    console.log('myCErc20 Deployed: ', mycDaiinstance.address);
+    // local tests
+    // const myDAIinstance = await deployProxy(myERC20, [MYERC20_TOKEN_SUPPLY], { from: tokenOwner });
+    // console.log('myDAI Deployed: ', myDAIinstance.address);
+    // const mycEthinstance = await deployProxy(CEther, [], { from: tokenOwner });
+    // console.log('myCEth Deployed: ', mycEthinstance.address);
+    // const mycDaiinstance = await deployProxy(CErc20, [], { from: tokenOwner });
+    // console.log('myCErc20 Deployed: ', mycDaiinstance.address);
 
     const factoryOwner = accounts[0];
     const JATinstance = await deployProxy(JAdminTools, [], { from: factoryOwner });
@@ -52,13 +53,12 @@ module.exports = async (deployer, network, accounts) => {
     const JTDeployer = await deployProxy(JTranchesDeployer, [], { from: factoryOwner });
     console.log("Tranches Deployer: " + JTDeployer.address);
 
-    const JCinstance = await deployProxy(JCream, [JATinstance.address, JFCinstance.address, JTDeployer.address,
-      CREAM_ADDRESS, TROLLER_ADDRESS, mySLICEinstance.address], { from: factoryOwner });
+    const JCinstance = await deployProxy(JCream, [JATinstance.address, JFCinstance.address, JTDeployer.address, CREAM_ADDRESS, crTROLLER_ADDRESS], { from: factoryOwner });
     console.log('JCream Deployed: ', JCinstance.address);
 
     await JATinstance.addAdmin(JCinstance.address, { from: factoryOwner })
 
-    await deployer.deploy(EthGateway, mycEthinstance.address, JCinstance.address);
+    await deployer.deploy(EthGateway, crETH_ADDRESS, JCinstance.address);
     const JEGinstance = await EthGateway.deployed();
     console.log('ETHGateway Deployed: ', JEGinstance.address);
 
@@ -66,10 +66,14 @@ module.exports = async (deployer, network, accounts) => {
 
     await JCinstance.setETHGateway(JEGinstance.address, { from: factoryOwner });
 
-    await JCinstance.setCEtherContract(mycEthinstance.address, { from: factoryOwner });
-    await JCinstance.setCTokenContract(myDAIinstance.address, mycDaiinstance.address, { from: factoryOwner });
+    // local tests
+    // await JCinstance.setCrEtherContract(mycEthinstance.address, { from: factoryOwner });
+    // await JCinstance.setCrTokenContract(myDAIinstance.address, mycDaiinstance.address, { from: factoryOwner });
+    // mainnet fork
+    await JCinstance.setCrEtherContract(crETH_ADDRESS, { from: factoryOwner });
+    await JCinstance.setCrTokenContract(DAI_ADDRESS, crDAI_ADDRESS, { from: factoryOwner });
 
-    await JCinstance.addTrancheToProtocol(ZERO_ADDRESS, "jEthTrancheAToken", "JEA", "jEthTrancheBToken", "JEB", web3.utils.toWei("0.04", "ether"), 18, 18, { from: factoryOwner });
+    await JCinstance.addTrancheToProtocol(ZERO_ADDRESS, "jEthTrancheAToken", "JEA", "jEthTrancheBToken", "JEB", web3.utils.toWei("0.04", "ether"), 8, 18, { from: factoryOwner });
     trParams = await JCinstance.trancheAddresses(0);
     let EthTrA = await JTrancheAToken.at(trParams.ATrancheAddress);
     console.log("ETH Tranche A Token Address: " + EthTrA.address);
@@ -78,7 +82,10 @@ module.exports = async (deployer, network, accounts) => {
 
     await JCinstance.setTrancheDeposit(0, true, { from: factoryOwner });
 
-    await JCinstance.addTrancheToProtocol(myDAIinstance.address, "jDaiTrancheAToken", "JDA", "jDaiTrancheBToken", "JDB", web3.utils.toWei("0.02", "ether"), 18, 18, { from: factoryOwner });
+    // local tests
+    // await JCinstance.addTrancheToProtocol(myDAIinstance.address, "jDaiTrancheAToken", "JDA", "jDaiTrancheBToken", "JDB", web3.utils.toWei("0.02", "ether"), 18, 18, { from: factoryOwner });
+    // mainnet fork
+    await JCinstance.addTrancheToProtocol(DAI_ADDRESS, "jDaiTrancheAToken", "JDA", "jDaiTrancheBToken", "JDB", web3.utils.toWei("0.02", "ether"), 8, 18, { from: factoryOwner });
     trParams = await JCinstance.trancheAddresses(1);
     let DaiTrA = await JTrancheAToken.at(trParams.ATrancheAddress);
     console.log("DAI Tranche A Token Address: " + DaiTrA.address);
@@ -122,10 +129,10 @@ module.exports = async (deployer, network, accounts) => {
         compoundDeployer.setJCompoundAddress(JCompoundInstance.address);
         console.log('compound deployer 1');
 
-        await JCompoundInstance.setCTokenContract(TRANCHE_ONE_TOKEN_ADDRESS, TRANCHE_ONE_CTOKEN_ADDRESS, { from: factoryOwner });
+        await JCompoundInstance.setCrTokenContract(TRANCHE_ONE_TOKEN_ADDRESS, TRANCHE_ONE_CTOKEN_ADDRESS, { from: factoryOwner });
         console.log('compound deployer 2');
 
-        await JCompoundInstance.setCTokenContract(TRANCHE_TWO_TOKEN_ADDRESS, TRANCHE_TWO_CTOKEN_ADDRESS, { from: factoryOwner });
+        await JCompoundInstance.setCrTokenContract(TRANCHE_TWO_TOKEN_ADDRESS, TRANCHE_TWO_CTOKEN_ADDRESS, { from: factoryOwner });
 
         console.log('compound deployer 3');
         await JCompoundInstance.addTrancheToProtocol(TRANCHE_ONE_TOKEN_ADDRESS, "Tranche A - Compound DAI", "ACDAI", "Tranche B - Compound DAI", "BCDAI", web3.utils.toWei("0.04", "ether"), 8, 18, { from: factoryOwner });
@@ -176,10 +183,10 @@ module.exports = async (deployer, network, accounts) => {
         compoundDeployer.setJCompoundAddress(JCompoundInstance.address);
         console.log('compound deployer 1');
 
-        await JCompoundInstance.setCTokenContract(TRANCHE_ONE_TOKEN_ADDRESS, TRANCHE_ONE_CTOKEN_ADDRESS, { from: factoryOwner });
+        await JCompoundInstance.setCrTokenContract(TRANCHE_ONE_TOKEN_ADDRESS, TRANCHE_ONE_CTOKEN_ADDRESS, { from: factoryOwner });
         console.log('compound deployer 2');
 
-        await JCompoundInstance.setCTokenContract(TRANCHE_TWO_TOKEN_ADDRESS, TRANCHE_TWO_CTOKEN_ADDRESS, { from: factoryOwner });
+        await JCompoundInstance.setCrTokenContract(TRANCHE_TWO_TOKEN_ADDRESS, TRANCHE_TWO_CTOKEN_ADDRESS, { from: factoryOwner });
 
         console.log('compound deployer 3');
         await JCompoundInstance.addTrancheToProtocol(TRANCHE_ONE_TOKEN_ADDRESS, "Tranche A - Compound DAI", "ACDAI", "Tranche B - Compound DAI", "BCDAI", web3.utils.toWei("0.04", "ether"), 8, 18, { from: factoryOwner });

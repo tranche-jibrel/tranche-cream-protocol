@@ -14,7 +14,7 @@ import "./interfaces/IJTrancheTokens.sol";
 import "./interfaces/IJTranchesDeployer.sol";
 import "./interfaces/IJCream.sol";
 import "./interfaces/ICErc20.sol";
-import "./interfaces/IComptrollerLensInterface.sol";
+import "./interfaces/IComptrollerInterface.sol";
 import "./JCreamStorage.sol";
 import "./TransferETHHelper.sol";
 import "./interfaces/IIncentivesController.sol";
@@ -30,21 +30,18 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
      * @param _tranchesDepl tranches deployer contract address
      * @param _creamTokenAddress COMP token contract address
      * @param _creamtrollAddress comptroller contract address
-     * @param _rewardsToken rewards token address (slice token address)
      */
     function initialize(address _adminTools, 
             address _feesCollector, 
             address _tranchesDepl,
             address _creamTokenAddress,
-            address _creamtrollAddress,
-            address _rewardsToken) external initializer() {
+            address _creamtrollAddress) external initializer() {
         OwnableUpgradeable.__Ownable_init();
         adminToolsAddress = _adminTools;
         feesCollectorAddress = _feesCollector;
         tranchesDeployerAddress = _tranchesDepl;
         creamTokenAddress = _creamTokenAddress;
         creamtrollerAddress = _creamtrollAddress;
-        rewardsToken = _rewardsToken;
         redeemTimeout = 3; //default
     }
 
@@ -67,22 +64,19 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
      * @param _tranchesDepl tranches deployer contract address
      * @param _creamTokenAddress COMP token contract address
      * @param _creamtrollAddress comptroller contract address
-     * @param _rewardsToken rewards token address (slice token address)
      */
     function setNewEnvironment(address _adminTools, 
             address _feesCollector, 
             address _tranchesDepl,
             address _creamTokenAddress,
-            address _creamtrollAddress,
-            address _rewardsToken) external onlyOwner {
-        require((_adminTools != address(0)) && (_feesCollector != address(0)) && (_rewardsToken != address(0)) &&
-            (_tranchesDepl != address(0)) && (_creamtrollAddress != address(0)) && (_creamTokenAddress != address(0)), "Jcream: check addresses");
+            address _creamtrollAddress) external onlyOwner {
+        require((_adminTools != address(0)) && (_feesCollector != address(0)) && (_tranchesDepl != address(0)) && 
+                (_creamtrollAddress != address(0)) && (_creamTokenAddress != address(0)), "Jcream: check addresses");
         adminToolsAddress = _adminTools;
         feesCollectorAddress = _feesCollector;
         tranchesDeployerAddress = _tranchesDepl;
         creamTokenAddress = _creamTokenAddress;
         creamtrollerAddress = _creamtrollAddress;
-        rewardsToken = _rewardsToken;
     }
 
     /**
@@ -97,33 +91,33 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
      * @dev set relationship between ethers and the corresponding Cream cETH contract
      * @param _cEtherContract cream token contract address 
      */
-    function setCEtherContract(address _cEtherContract) external onlyAdmins {
+    function setCrEtherContract(address _cEtherContract) external onlyAdmins {
         crEthToken = ICEth(_cEtherContract);
         crTokenContracts[address(0)] = _cEtherContract;
     }
 
     /**
-     * @dev set relationship between a token and the corresponding cream cToken contract
-     * @param _erc20Contract token contract address (i.e. DAI contract, on Kovan: 0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa)
-     * @param _cErc20Contract cream token contract address (i.e. cDAI contract, on Kovan: 0xf0d0eb522cfa50b716b3b1604c4f0fa6f04376ad)
+     * @dev set relationship between a token and the corresponding cream crToken contract
+     * @param _erc20Contract token contract address 
+     * @param _cErc20Contract cream token contract address 
      */
-    function setCTokenContract(address _erc20Contract, address _cErc20Contract) external onlyAdmins {
+    function setCrTokenContract(address _erc20Contract, address _cErc20Contract) external onlyAdmins {
         crTokenContracts[_erc20Contract] = _cErc20Contract;
     }
 
     /**
-     * @dev check if a cToken is allowed or not
-     * @param _erc20Contract token contract address (i.e. DAI contract, on Kovan: 0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa)
+     * @dev check if a crToken is allowed or not
+     * @param _erc20Contract token contract address
      * @return true or false
      */
-    function isCTokenAllowed(address _erc20Contract) public view returns (bool) {
+    function isCrTokenAllowed(address _erc20Contract) public view returns (bool) {
         return crTokenContracts[_erc20Contract] != address(0);
     }
 
     /**
      * @dev get RPB from cream token
      * @param _trancheNum tranche number
-     * @return cToken cream supply RPB
+     * @return crToken cream supply RPB
      */
     function getCreamSupplyRPB(uint256 _trancheNum) external view returns (uint256) {
         if (trancheAddresses[_trancheNum].buyerCoinAddress == address(0)) {
@@ -150,9 +144,9 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
     }
 
     /**
-     * @dev check if a cToken is allowed or not
+     * @dev check if a crToken is allowed or not
      * @param _trancheNum tranche number
-     * @param _crTokenDec cToken decimals
+     * @param _crTokenDec crToken decimals
      * @param _underlyingDec underlying token decimals
      */
     function setDecimals(uint256 _trancheNum, uint8 _crTokenDec, uint8 _underlyingDec) external onlyAdmins {
@@ -196,7 +190,7 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
      * @param _nameB tranche B token name
      * @param _symbolB tranche B token symbol
      * @param _fixedRpb tranche A percentage fixed compounded interest per year
-     * @param _crTokenDec cToken decimals
+     * @param _crTokenDec crToken decimals
      * @param _underlyingDec underlying token decimals
      */
     function addTrancheToProtocol(address _erc20Contract, 
@@ -208,7 +202,7 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
             uint8 _crTokenDec, 
             uint8 _underlyingDec) external onlyAdmins nonReentrant {
         require(tranchesDeployerAddress != address(0), "JCream: set tranche eth deployer");
-        require(isCTokenAllowed(_erc20Contract), "JCream: cToken not allowed");
+        require(isCrTokenAllowed(_erc20Contract), "JCream: crToken not allowed");
 
         trancheAddresses[tranchePairsCounter].buyerCoinAddress = _erc20Contract;
         trancheAddresses[tranchePairsCounter].crTokenAddress = crTokenContracts[_erc20Contract];
@@ -269,9 +263,9 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
     }
 
     /**
-     * @dev redeem an amount of cTokens to have back original tokens (tokens remains in this contract). Only allowed token should be sent
+     * @dev redeem an amount of crTokens to have back original tokens (tokens remains in this contract). Only allowed token should be sent
      * @param _erc20Contract original token contract address
-     * @param _amount cToken amount to be sent
+     * @param _amount crToken amount to be sent
      * @param _redeemType true or false, normally true
      */
     function redeemCErc20Tokens(address _erc20Contract, uint256 _amount, bool _redeemType) internal returns (uint256 redeemResult) {
@@ -280,7 +274,7 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
         ICErc20 crToken = ICErc20(crTokenContracts[_erc20Contract]);
 
         if (_redeemType) {
-            // Retrieve your asset based on a cToken amount
+            // Retrieve your asset based on a crToken amount
             redeemResult = crToken.redeem(_amount);
         } else {
             // Retrieve your asset based on an amount of the asset
@@ -294,18 +288,18 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
      * @return exchRateMantissa exchange rate cEth mantissa
      */
     function getCEthExchangeRate() public view returns (uint256 exchRateMantissa) {
-        // Amount of current exchange rate from cToken to underlying
+        // Amount of current exchange rate from crToken to underlying
         return exchRateMantissa = crEthToken.exchangeRateStored(); // it returns something like 200335783821833335165549849
     }
 
     /**
      * @dev get cETH stored exchange rate from cream contract
      * @param _tokenContract tranche number
-     * @return exchRateMantissa exchange rate cToken mantissa
+     * @return exchRateMantissa exchange rate crToken mantissa
      */
-    function getCTokenExchangeRate(address _tokenContract) public view returns (uint256 exchRateMantissa) {
+    function getCrTokenExchangeRate(address _tokenContract) public view returns (uint256 exchRateMantissa) {
         ICErc20 crToken = ICErc20(crTokenContracts[_tokenContract]);
-        // Amount of current exchange rate from cToken to underlying
+        // Amount of current exchange rate from crToken to underlying
         return exchRateMantissa = crToken.exchangeRateStored(); // it returns something like 210615675702828777787378059 (cDAI contract) or 209424757650257 (cUSDT contract)
     }
 
@@ -328,7 +322,7 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
         if (trancheAddresses[_trancheNum].buyerCoinAddress == address(0)) {
             creamPrice = getCEthExchangeRate();
         } else {
-            creamPrice = getCTokenExchangeRate(trancheAddresses[_trancheNum].buyerCoinAddress);
+            creamPrice = getCrTokenExchangeRate(trancheAddresses[_trancheNum].buyerCoinAddress);
         }
         return creamPrice;
     }
@@ -669,11 +663,11 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
                 TransferETHHelper.safeTransferETH(feesCollectorAddress, feesAmount);
             }   
         } else {
-            // calculate taAmount via cToken price
+            // calculate taAmount via crToken price
             oldBal = getTokenBalance(origToken);
             uint256 creamRetCode = redeemCErc20Tokens(origToken, normAmount, false);
             if(creamRetCode != 0) {
-                // emergency: send all ctokens balance to cream 
+                // emergency: send all crtokens balance to cream 
                 redeemCErc20Tokens(origToken, crTokenBal, true);  
             }
             diffBal = getTokenBalance(origToken).sub(oldBal);
@@ -791,9 +785,9 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
                 TransferETHHelper.safeTransferETH(feesCollectorAddress, feesAmount);
             }   
         } else {
-            // calculate taToken amount via cToken price
+            // calculate taToken amount via crToken price
             oldBal = getTokenBalance(origToken);
-            require(redeemCErc20Tokens(origToken, normAmount, false) == 0, "JCream: incorrect answer from cToken");
+            require(redeemCErc20Tokens(origToken, normAmount, false) == 0, "JCream: incorrect answer from crToken");
             diffBal = getTokenBalance(origToken);
             userAmount = diffBal.mul(redeemPerc).div(PERCENT_DIVIDER);
             SafeERC20Upgradeable.safeTransfer(IERC20Upgradeable(origToken), msg.sender, userAmount);
@@ -818,9 +812,9 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
     }
 
     /**
-     * @dev redeem every cToken amount and send values to fees collector
+     * @dev redeem every crToken amount and send values to fees collector
      * @param _trancheNum tranche number
-     * @param _crTokenAmount cToken amount to send to cream protocol
+     * @param _crTokenAmount crToken amount to send to cream protocol
      */
     function redeemCrTokenAmount(uint256 _trancheNum, uint256 _crTokenAmount) external onlyAdmins nonReentrant {
         uint256 oldBal;
@@ -833,9 +827,9 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
             diffBal = getEthBalance().sub(oldBal);
             TransferETHHelper.safeTransferETH(feesCollectorAddress, diffBal);
         } else {
-            // calculate taToken amount via cToken price
+            // calculate taToken amount via crToken price
             oldBal = getTokenBalance(origToken);
-            require(redeemCErc20Tokens(origToken, _crTokenAmount, true) == 0, "JCream: incorrect answer from cToken");
+            require(redeemCErc20Tokens(origToken, _crTokenAmount, true) == 0, "JCream: incorrect answer from crToken");
             diffBal = getTokenBalance(origToken);
             SafeERC20Upgradeable.safeTransfer(IERC20Upgradeable(origToken), feesCollectorAddress, diffBal);
         }
@@ -878,7 +872,7 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
      * @return comp amount accrued
      */
     function getTotalCreamAccrued() public view onlyAdmins returns (uint256) {
-        return IComptrollerLensInterface(creamtrollerAddress).creamAccrued(address(this));
+        return IComptrollerInterface(creamtrollerAddress).compAccrued(address(this));
     }
 
     /**
@@ -888,7 +882,7 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
     function claimTotalCreamAccruedToReceiver(address _receiver) external onlyAdmins nonReentrant {
         uint256 totAccruedAmount = getTotalCreamAccrued();
         if (totAccruedAmount > 0) {
-            IComptrollerLensInterface(creamtrollerAddress).claimComp(address(this));
+            IComptrollerInterface(creamtrollerAddress).claimComp(address(this));
             uint256 amount = IERC20Upgradeable(creamTokenAddress).balanceOf(address(this));
             SafeERC20Upgradeable.safeTransfer(IERC20Upgradeable(creamTokenAddress), _receiver, amount);
         }

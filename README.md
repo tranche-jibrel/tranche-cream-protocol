@@ -39,7 +39,7 @@ or to test a single file:
 truffle run coverage --network development --file="test/JCTruffle.test.js"    
 ```
 
-Test coverage on JCream contract: 82.54%
+Test coverage on JCream contract: 93.61%
 
 
 [(Back to top)](#Cream-Tranche-Protocol)
@@ -113,12 +113,12 @@ Note: if ETH tranche is deployed, please deploy ETHGateway contract without a pr
         </tr>
         <tr>
             <td>JCream</td>
-            <td><code>21.69</code></td>
+            <td><code>21.58</code></td>
             <td>Core contract protocol (implementation). It is responsible to make all actions to give the exact amount of tranche token to users, connecting with Cream to have interest rates and other informations to give tokens the price they should have block by block. It claims extra token from Cream (if any), sending them to Fees collector contract, that changes all fees and extra tokens into new interests for token holders. It deploys new tranche tokens via Tranche Deployer contract.</td>
         </tr>
         <tr>
             <td>JCreamStorage</td>
-            <td><code>1.89</code></td>
+            <td><code>1.85</code></td>
             <td>Core contract protocol (storage)</td>
         </tr>
         <tr>

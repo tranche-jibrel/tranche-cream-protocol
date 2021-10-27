@@ -34,16 +34,33 @@ module.exports = {
       confirmations: 2,
       skipDryRun: true
     },
+    ftm: {
+      provider: () =>
+        new HDWalletProvider(
+          process.env.mnemonic,
+          "https://rpc.ftm.tools/"
+          //`https://black-wispy-glitter.fantom.quiknode.pro/${process.env.INFURA_KEY}`
+        ),
+      network_id: 250,
+      timeoutBlocks: 200,
+      confirmations: 2,
+      gas: 7500000,
+      gasPrice: 600000000000,
+      skipDryRun: true
+    },
   },
+
   plugins: ['truffle-contract-size', 
     'solidity-coverage',
     'truffle-plugin-verify',
   ],
+
   // Set default mocha options here, use special reporters etc.
   mocha: {
     reporter: 'eth-gas-reporter',
     timeout: 100000
   },
+  
   // Configure your compilers
   compilers: {
     solc: {

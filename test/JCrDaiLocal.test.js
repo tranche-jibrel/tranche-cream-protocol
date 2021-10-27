@@ -42,7 +42,7 @@ let daiContract, cEtherContract, cERC20Contract, jFCContract, jATContract, jTrDe
 let ethTrAContract, ethTrBContract, daiTrAContract, daiTrBContract;
 let tokenOwner, user1;
 
-contract("JCream", function (accounts) {
+contract("JCream Dai local tests", function (accounts) {
 
   it("ETH balances", async function () {
     //accounts = await web3.eth.getAccounts();
@@ -139,7 +139,7 @@ contract("JCream", function (accounts) {
   });
 
   it("user1 buys some token daiTrA", async function () {
-    console.log("is Dai allowed in JCream: " + await jCreamContract.isCTokenAllowed(daiContract.address));
+    console.log("is Dai allowed in JCream: " + await jCreamContract.isCrTokenAllowed(daiContract.address));
     console.log((await jCreamContract.getCreamPrice(1)).toString());
     trPar = await jCreamContract.trancheParameters(1);
     console.log("param tranche A: " + JSON.stringify(trPar, ["trancheAFixedPercentage", "trancheALastActionTime", "storedTrancheAPrice", "trancheACurrentRPS", "crTokenDecimals", "underlyingDecimals"]));

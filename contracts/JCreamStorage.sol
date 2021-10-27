@@ -43,7 +43,6 @@ contract JCreamStorage is OwnableUpgradeable {
     address public tranchesDeployerAddress;
     address public creamTokenAddress;
     address public creamtrollerAddress;
-    address public rewardsToken;
 
     uint256 public tranchePairsCounter; 
     uint32 public redeemTimeout;
