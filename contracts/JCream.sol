@@ -144,7 +144,7 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
     }
 
     /**
-     * @dev check if a crToken is allowed or not
+     * @dev set decimals for tranche tokens
      * @param _trancheNum tranche number
      * @param _crTokenDec crToken decimals
      * @param _underlyingDec underlying token decimals
@@ -189,7 +189,7 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
      * @param _symbolA tranche A token symbol
      * @param _nameB tranche B token name
      * @param _symbolB tranche B token symbol
-     * @param _fixedRpb tranche A percentage fixed compounded interest per year
+     * @param _fixPercentage tranche A percentage fixed compounded interest per year
      * @param _crTokenDec crToken decimals
      * @param _underlyingDec underlying token decimals
      */
@@ -198,7 +198,7 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
             string memory _symbolA, 
             string memory _nameB, 
             string memory _symbolB, 
-            uint256 _fixedRpb, 
+            uint256 _fixPercentage, 
             uint8 _crTokenDec, 
             uint8 _underlyingDec) external onlyAdmins nonReentrant {
         require(tranchesDeployerAddress != address(0), "JCream: set tranche eth deployer");
@@ -214,7 +214,7 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
         
         trancheParameters[tranchePairsCounter].crTokenDecimals = _crTokenDec;
         trancheParameters[tranchePairsCounter].underlyingDecimals = _underlyingDec;
-        trancheParameters[tranchePairsCounter].trancheAFixedPercentage = _fixedRpb;
+        trancheParameters[tranchePairsCounter].trancheAFixedPercentage = _fixPercentage;
         trancheParameters[tranchePairsCounter].trancheALastActionTime = block.timestamp;
         // if we would like to have always 18 decimals
         trancheParameters[tranchePairsCounter].storedTrancheAPrice = getCreamPrice(tranchePairsCounter);
@@ -379,14 +379,12 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
     }
 
     /**
-     * @dev get Tranche A exchange rate (tokens with 18 decimals)
+     * @dev set Tranche A RPS (scaled by 18 decimals)
      * @param _trancheNum tranche number
-     * @return tranche A token current price
+     * @return tranche A RPS
      */
     function calcRPBFromPercentage(uint256 _trancheNum) public returns (uint256) {
-        // if normalized price in tranche A price, everything should be scaled to 1e18 
-        trancheParameters[_trancheNum].trancheACurrentRPS = trancheParameters[_trancheNum].storedTrancheAPrice
-            .mul(trancheParameters[_trancheNum].trancheAFixedPercentage).div(SECONDS_PER_YEAR).div(1e18);
+        trancheParameters[_trancheNum].trancheACurrentRPS = (trancheParameters[_trancheNum].trancheAFixedPercentage).div(SECONDS_PER_YEAR).div(1e18);
         return trancheParameters[_trancheNum].trancheACurrentRPS;
     }
 

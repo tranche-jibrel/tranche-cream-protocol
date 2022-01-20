@@ -98,7 +98,7 @@ Note: if ETH tranche is deployed, please deploy ETHGateway contract without a pr
     <tbody>
         <tr>
             <td>ETHGateway</td>
-            <td><code>2.64</code></td>
+            <td><code>3.21</code></td>
             <td>Ethereum gateway, useful when dealing with ethers</td>
         </tr>
         <tr>
@@ -113,7 +113,7 @@ Note: if ETH tranche is deployed, please deploy ETHGateway contract without a pr
         </tr>
         <tr>
             <td>JCream</td>
-            <td><code>21.58</code></td>
+            <td><code>21.57</code></td>
             <td>Core contract protocol (implementation). It is responsible to make all actions to give the exact amount of tranche token to users, connecting with Cream to have interest rates and other informations to give tokens the price they should have block by block. It claims extra token from Cream (if any), sending them to Fees collector contract, that changes all fees and extra tokens into new interests for token holders. It deploys new tranche tokens via Tranche Deployer contract.</td>
         </tr>
         <tr>
