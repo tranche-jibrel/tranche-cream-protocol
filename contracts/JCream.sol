@@ -17,7 +17,6 @@ import "./interfaces/ICErc20.sol";
 import "./interfaces/IComptrollerInterface.sol";
 import "./JCreamStorage.sol";
 import "./TransferETHHelper.sol";
-import "./interfaces/IIncentivesController.sol";
 
 
 contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage, IJCream {
@@ -126,21 +125,6 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
             ICErc20 crToken = ICErc20(crTokenContracts[trancheAddresses[_trancheNum].buyerCoinAddress]);
             return crToken.supplyRatePerBlock();
         }
-    }
-
-    /**
-     * @dev set incentive rewards address
-     * @param _incentivesController incentives controller contract address
-     */
-    function setincentivesControllerAddress(address _incentivesController) external onlyAdmins {
-        incentivesControllerAddress = _incentivesController;
-    }
-
-    /**
-     * @dev get incentive rewards address
-     */
-    function getSirControllerAddress() external view override returns (address) {
-        return incentivesControllerAddress;
     }
 
     /**
@@ -478,101 +462,6 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
         return tbPrice;
     }
 
-     
-    /**
-     * @dev set staking details for tranche A holders, with number, amount and time
-     * @param _trancheNum tranche number
-     * @param _account user's account
-     * @param _stkNum staking detail counter
-     * @param _amount amount of tranche A tokens
-     * @param _time time to be considered the deposit
-     */
-    function setTrAStakingDetails(uint256 _trancheNum, address _account, uint256 _stkNum, uint256 _amount, uint256 _time) external override onlyAdmins {
-        stakeCounterTrA[_account][_trancheNum] = _stkNum;
-        StakingDetails storage details = stakingDetailsTrancheA[_account][_trancheNum][_stkNum];
-        details.startTime = _time;
-        details.amount = _amount;
-    }
-
-    /**
-     * @dev when redemption occurs on tranche A, removing tranche A tokens from staking information (FIFO logic)
-     * @param _trancheNum tranche number
-     * @param _amount amount of redeemed tokens
-     */
-    function decreaseTrancheATokenFromStake(uint256 _trancheNum, uint256 _amount) internal {
-        uint256 senderCounter = stakeCounterTrA[msg.sender][_trancheNum];
-        uint256 tmpAmount = _amount;
-        for (uint i = 1; i <= senderCounter; i++) {
-            StakingDetails storage details = stakingDetailsTrancheA[msg.sender][_trancheNum][i];
-            if (details.amount > 0) {
-                if (details.amount <= tmpAmount) {
-                    tmpAmount = tmpAmount.sub(details.amount);
-                    details.amount = 0;
-                } else {
-                    details.amount = details.amount.sub(tmpAmount);
-                    tmpAmount = 0;
-                }
-            }
-            if (tmpAmount == 0)
-                break;
-        }
-    }
-
-    function getSingleTrancheUserStakeCounterTrA(address _user, uint256 _trancheNum) external view override returns (uint256) {
-        return stakeCounterTrA[_user][_trancheNum];
-    }
-
-    function getSingleTrancheUserSingleStakeDetailsTrA(address _user, uint256 _trancheNum, uint256 _num) external view override returns (uint256, uint256) {
-        return (stakingDetailsTrancheA[_user][_trancheNum][_num].startTime, stakingDetailsTrancheA[_user][_trancheNum][_num].amount);
-    }
-
-    /**
-     * @dev set staking details for tranche B holders, with number, amount and time
-     * @param _trancheNum tranche number
-     * @param _account user's account
-     * @param _stkNum staking detail counter
-     * @param _amount amount of tranche B tokens
-     * @param _time time to be considered the deposit
-     */
-    function setTrBStakingDetails(uint256 _trancheNum, address _account, uint256 _stkNum, uint256 _amount, uint256 _time) external override onlyAdmins {
-        stakeCounterTrB[_account][_trancheNum] = _stkNum;
-        StakingDetails storage details = stakingDetailsTrancheB[_account][_trancheNum][_stkNum];
-        details.startTime = _time;
-        details.amount = _amount; 
-    }
-    
-    /**
-     * @dev when redemption occurs on tranche B, removing tranche B tokens from staking information (FIFO logic)
-     * @param _trancheNum tranche number
-     * @param _amount amount of redeemed tokens
-     */
-    function decreaseTrancheBTokenFromStake(uint256 _trancheNum, uint256 _amount) internal {
-        uint256 senderCounter = stakeCounterTrB[msg.sender][_trancheNum];
-        uint256 tmpAmount = _amount;
-        for (uint i = 1; i <= senderCounter; i++) {
-            StakingDetails storage details = stakingDetailsTrancheB[msg.sender][_trancheNum][i];
-            if (details.amount > 0) {
-                if (details.amount <= tmpAmount) {
-                    tmpAmount = tmpAmount.sub(details.amount);
-                    details.amount = 0;
-                } else {
-                    details.amount = details.amount.sub(tmpAmount);
-                    tmpAmount = 0;
-                }
-            }
-            if (tmpAmount == 0)
-                break;
-        }
-    }
-
-    function getSingleTrancheUserStakeCounterTrB(address _user, uint256 _trancheNum) external view override returns (uint256) {
-        return stakeCounterTrB[_user][_trancheNum];
-    }
-
-    function getSingleTrancheUserSingleStakeDetailsTrB(address _user, uint256 _trancheNum, uint256 _num) external view override returns (uint256, uint256) {
-        return (stakingDetailsTrancheB[_user][_trancheNum][_num].startTime, stakingDetailsTrancheB[_user][_trancheNum][_num].amount);
-    }
-
     /**
      * @dev buy Tranche A Tokens
      * @param _trancheNum tranche number
@@ -609,11 +498,6 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
             //Mint trancheA tokens and send them to msg.sender;
             IJTrancheTokens(trancheAddresses[_trancheNum].ATrancheAddress).mint(msg.sender, taAmount);
         }
-
-        stakeCounterTrA[msg.sender][_trancheNum] = stakeCounterTrA[msg.sender][_trancheNum].add(1);
-        StakingDetails storage details = stakingDetailsTrancheA[msg.sender][_trancheNum][stakeCounterTrA[msg.sender][_trancheNum]];
-        details.startTime = block.timestamp;
-        details.amount = taAmount;
         
         lastActivity[msg.sender] = block.number;
         emit TrancheATokenMinted(_trancheNum, msg.sender, _amount, taAmount);
@@ -677,13 +561,6 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
                 SafeERC20Upgradeable.safeTransfer(IERC20Upgradeable(origToken), feesCollectorAddress, feesAmount);
             }
         }
-
-        // claim and transfer rewards to msg.sender. Be sure to wait for this function to be completed! 
-        bool rewClaimCompleted = IIncentivesController(incentivesControllerAddress).claimRewardsAllMarkets(msg.sender);
-
-        // decrease tokens after claiming rewards
-        if (rewClaimCompleted && _amount > 0)
-            decreaseTrancheATokenFromStake(_trancheNum, _amount);
      
         IJTrancheTokens(trancheAddresses[_trancheNum].ATrancheAddress).burn(_amount);
         lastActivity[msg.sender] = block.number;
@@ -730,11 +607,6 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
             IJTrancheTokens(trancheAddresses[_trancheNum].BTrancheAddress).mint(msg.sender, tbAmount);
         } else 
             tbAmount = 0;
-
-        stakeCounterTrB[msg.sender][_trancheNum] = stakeCounterTrB[msg.sender][_trancheNum].add(1);
-        StakingDetails storage details = stakingDetailsTrancheB[msg.sender][_trancheNum][stakeCounterTrB[msg.sender][_trancheNum]];
-        details.startTime = block.timestamp;
-        details.amount = tbAmount;
 
         lastActivity[msg.sender] = block.number;
         emit TrancheBTokenMinted(_trancheNum, msg.sender, _amount, tbAmount);
@@ -795,13 +667,6 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
                 SafeERC20Upgradeable.safeTransfer(IERC20Upgradeable(origToken), feesCollectorAddress, feesAmount);
             }   
         }
-
-        // claim and transfer rewards to msg.sender. Be sure to wait for this function to be completed! 
-        bool rewClaimCompleted = IIncentivesController(incentivesControllerAddress).claimRewardsAllMarkets(msg.sender);
-
-        // decrease tokens after claiming rewards
-        if (rewClaimCompleted && _amount > 0)
-            decreaseTrancheBTokenFromStake(_trancheNum, _amount);
         
         IJTrancheTokens(trancheAddresses[_trancheNum].BTrancheAddress).burn(_amount);
         lastActivity[msg.sender] = block.number;

@@ -1,23 +1,16 @@
 require('dotenv').config();
 const { deployProxy, upgradeProxy } = require('@openzeppelin/truffle-upgrades');
 
-var myERC20 = artifacts.require("./mocks/myERC20.sol");
-var mySlice = artifacts.require("./mocks/mySlice.sol");
-var CErc20 = artifacts.require('./mocks/CErc20.sol');
-var CEther = artifacts.require('./mocks/CEther.sol');
-
 var JAdminTools = artifacts.require("./JAdminTools.sol");
 var JFeesCollector = artifacts.require("./JFeesCollector.sol");
 var JCream = artifacts.require('./JCream');
 var JTranchesDeployer = artifacts.require('./JTranchesDeployer');
-var IncentivesController = artifacts.require('./IncentivesController');
 
 var JTrancheAToken = artifacts.require('./JTrancheAToken');
 var JTrancheBToken = artifacts.require('./JTrancheBToken');
 
 var EthGateway = artifacts.require('./ETHGateway');
 
-const MYERC20_TOKEN_SUPPLY = 5000000;
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 const WETH_ADDRESS = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
@@ -34,14 +27,6 @@ const cyDAI_ADDRESS = '0x8e595470Ed749b85C6F7669de83EAe304C2ec68F'
 module.exports = async (deployer, network, accounts) => {
   if (network == "development") {
     const tokenOwner = accounts[0];
-
-    // local tests
-    // const myDAIinstance = await deployProxy(myERC20, [MYERC20_TOKEN_SUPPLY], { from: tokenOwner });
-    // console.log('myDAI Deployed: ', myDAIinstance.address);
-    // const mycEthinstance = await deployProxy(CEther, [], { from: tokenOwner });
-    // console.log('myCEth Deployed: ', mycEthinstance.address);
-    // const mycDaiinstance = await deployProxy(CErc20, [], { from: tokenOwner });
-    // console.log('myCErc20 Deployed: ', mycDaiinstance.address);
 
     const factoryOwner = accounts[0];
     const JATinstance = await deployProxy(JAdminTools, [], { from: factoryOwner });
@@ -93,11 +78,6 @@ module.exports = async (deployer, network, accounts) => {
     console.log("DAI Tranche B Token Address: " + DaiTrB.address);
 
     await JCinstance.setTrancheDeposit(1, true, { from: factoryOwner });
-
-    const JIController = await deployProxy(IncentivesController, [], { from: factoryOwner });
-    console.log("Incentive controller mock: " + JIController.address);
-
-    await JCinstance.setincentivesControllerAddress(JIController.address);
 
   } else if (network == "kovan") {
     let { 

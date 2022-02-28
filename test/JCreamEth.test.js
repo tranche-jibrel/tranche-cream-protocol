@@ -20,9 +20,6 @@ const {
   time
 } = require('@openzeppelin/test-helpers');
 
-const myERC20 = artifacts.require("myERC20");
-const CEther = artifacts.require("CEther");
-const CErc20 = artifacts.require("CErc20");
 const JAdminTools = artifacts.require('JAdminTools');
 const JFeesCollector = artifacts.require('JFeesCollector');
 
@@ -34,11 +31,10 @@ const JTrancheBToken = artifacts.require('JTrancheBToken');
 
 const EthGateway = artifacts.require('./ETHGateway');
 
-const MYERC20_TOKEN_SUPPLY = 5000000;
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
-//   const fromWei = (x) => fromWei(x.toString());
-//   const toWei = (x) => toWei(x.toString());
+const fromWei = (x) => web3.utils.fromWei(x.toString());
+const toWei = (x) => web3.utils.toWei(x.toString());
 const fromWei8Dec = (x) => x / Math.pow(10, 8);
 const toWei8Dec = (x) => x * Math.pow(10, 8);
 
@@ -112,7 +108,7 @@ contract("JCream crEth mainnet", function (accounts) {
 
   it("user1 buys some token EthTrA", async function () {
     console.log(user1);
-    console.log("User1 Eth balance: " + web3.utils.fromWei(await web3.eth.getBalance(user1)) + " ETH");
+    console.log("User1 Eth balance: " + fromWei(await web3.eth.getBalance(user1)) + " ETH");
     console.log((await jCreamContract.getCreamPrice(0)).toString());
     trPar = await jCreamContract.trancheParameters(0);
     console.log("param tranche A: " + JSON.stringify(trPar, ["trancheAFixedPercentage", "trancheALastActionTime", "storedTrancheAPrice", "trancheACurrentRPS", "crTokenDecimals", "underlyingDecimals"]));
@@ -123,30 +119,30 @@ contract("JCream crEth mainnet", function (accounts) {
     trAPrice = await jCreamContract.getTrancheAExchangeRate(0, {
       from: user1
     });
-    console.log("price tranche A: " + web3.utils.fromWei(trAPrice));
+    console.log("price tranche A: " + fromWei(trAPrice));
 
-    tx = await jCreamContract.buyTrancheAToken(0, web3.utils.toWei("1"), {
+    tx = await jCreamContract.buyTrancheAToken(0, toWei("1"), {
       from: user1,
-      value: web3.utils.toWei("1")
+      value: toWei("1")
     });
-    console.log("User1 New Eth balance: " + web3.utils.fromWei(await web3.eth.getBalance(user1)) + " ETH");
-    console.log("User1 trA tokens: " + web3.utils.fromWei(await ethTrAContract.balanceOf(user1)) + " ETA");
+    console.log("User1 New Eth balance: " + fromWei(await web3.eth.getBalance(user1)) + " ETH");
+    console.log("User1 trA tokens: " + fromWei(await ethTrAContract.balanceOf(user1)) + " ETA");
     console.log("JCream crEth balance: " + fromWei8Dec(await jCreamContract.getTokenBalance(crETH_ADDRESS)) + " crEth");
-    console.log("TrA price: " + web3.utils.fromWei(await jCreamContract.getTrancheAExchangeRate(0)));
+    console.log("TrA price: " + fromWei(await jCreamContract.getTrancheAExchangeRate(0)));
     console.log("Cream Price: " + await jCreamContract.getCreamPrice(0));
-    console.log("TrA price: " + web3.utils.fromWei(await jCreamContract.getTrancheAExchangeRate(0)));
+    console.log("TrA price: " + fromWei(await jCreamContract.getTrancheAExchangeRate(0)));
   });
 
   it("user1 buys some token EthTrB", async function () {
-    //console.log("User1 Eth balance: "+ web3.utils.fromWei(await web3.eth.getBalance(user1)) + " ETH");
-    tx = await jCreamContract.buyTrancheBToken(0, web3.utils.toWei("1"), {
+    //console.log("User1 Eth balance: "+ fromWei(await web3.eth.getBalance(user1)) + " ETH");
+    tx = await jCreamContract.buyTrancheBToken(0, toWei("1"), {
       from: user1,
-      value: web3.utils.toWei("1")
+      value: toWei("1")
     });
-    console.log("User1 New Eth balance: " + web3.utils.fromWei(await web3.eth.getBalance(user1)) + " ETH");
-    console.log("User1 trB tokens: " + web3.utils.fromWei(await ethTrBContract.balanceOf(user1)) + " ETB");
+    console.log("User1 New Eth balance: " + fromWei(await web3.eth.getBalance(user1)) + " ETH");
+    console.log("User1 trB tokens: " + fromWei(await ethTrBContract.balanceOf(user1)) + " ETB");
     console.log("JCream cEth balance: " + fromWei8Dec(await jCreamContract.getTokenBalance(crETH_ADDRESS)) + " crEth");
-    console.log("TrB price: " + web3.utils.fromWei(await jCreamContract.getTrancheBExchangeRate(0, 0)));
+    console.log("TrB price: " + fromWei(await jCreamContract.getTrancheBExchangeRate(0, 0)));
   });
 
   it('time passes...', async function () {
@@ -159,12 +155,12 @@ contract("JCream crEth mainnet", function (accounts) {
   });
 
   it("user1 redeems token EthTrA", async function () {
-    oldBal = web3.utils.fromWei(await web3.eth.getBalance(user1));
+    oldBal = fromWei(await web3.eth.getBalance(user1));
     console.log("User1 Eth balance: " + oldBal + " ETH");
     bal = await ethTrAContract.balanceOf(user1);
-    console.log("User1 trA tokens: " + web3.utils.fromWei(bal) + " ETA");
+    console.log("User1 trA tokens: " + fromWei(bal) + " ETA");
     console.log("JCream cEth balance: " + fromWei8Dec(await jCreamContract.getTokenBalance(crETH_ADDRESS)) + " crEth");
-    console.log("CEther eth bal:" + web3.utils.fromWei(await web3.eth.getBalance(crETH_ADDRESS)));
+    console.log("CEther eth bal:" + fromWei(await web3.eth.getBalance(crETH_ADDRESS)));
     trPar = await jCreamContract.trancheParameters(0);
     stPrice = trPar.storedTrancheAPrice * Math.pow(10, -18);
     //console.log(stPrice.toString());
@@ -179,12 +175,12 @@ contract("JCream crEth mainnet", function (accounts) {
     tx = await jCreamContract.redeemTrancheAToken(0, bal, {
       from: user1
     });
-    newBal = web3.utils.fromWei(await web3.eth.getBalance(user1));
+    newBal = fromWei(await web3.eth.getBalance(user1));
     console.log("User1 New Eth balance: " + newBal + " ETH");
     console.log("User1 trA interest: " + (newBal - oldBal) + " ETH");
-    console.log("User1 trA tokens: " + web3.utils.fromWei(await ethTrAContract.balanceOf(user1)) + " ETA");
+    console.log("User1 trA tokens: " + fromWei(await ethTrAContract.balanceOf(user1)) + " ETA");
     console.log("JCream new cEth balance: " + fromWei8Dec(await jCreamContract.getTokenBalance(crETH_ADDRESS)) + " crEth");
-    console.log("TrA price: " + web3.utils.fromWei(await jCreamContract.getTrancheAExchangeRate(0)));
+    console.log("TrA price: " + fromWei(await jCreamContract.getTrancheAExchangeRate(0)));
   });
 
   it('time passes...', async function () {
@@ -197,14 +193,14 @@ contract("JCream crEth mainnet", function (accounts) {
   });
 
   it("user1 redeems token EthTrB", async function () {
-    oldBal = web3.utils.fromWei(await web3.eth.getBalance(user1));
+    oldBal = fromWei(await web3.eth.getBalance(user1));
     console.log("User1 Eth balance: " + oldBal + " ETH");
     bal = await ethTrBContract.balanceOf(user1);
-    console.log("User1 trB tokens: " + web3.utils.fromWei(bal) + " ETB");
+    console.log("User1 trB tokens: " + fromWei(bal) + " ETB");
     console.log("JCream crEth balance: " + fromWei8Dec(await jCreamContract.getTokenBalance(crETH_ADDRESS)) + " crEth");
-    trbPrice = web3.utils.fromWei(await jCreamContract.getTrancheBExchangeRate(0, 0))
+    trbPrice = fromWei(await jCreamContract.getTrancheBExchangeRate(0, 0))
     console.log("TrB price: " + trbPrice);
-    console.log("CEther eth bal:" + web3.utils.fromWei(await web3.eth.getBalance(crETH_ADDRESS)));
+    console.log("CEther eth bal:" + fromWei(await web3.eth.getBalance(crETH_ADDRESS)));
     //console.log(stPrice.toString());
     tempAmnt = bal * Math.pow(10, -18);
     //console.log(tempAmnt.toString())
@@ -217,11 +213,11 @@ contract("JCream crEth mainnet", function (accounts) {
     tx = await jCreamContract.redeemTrancheBToken(0, bal, {
       from: user1
     });
-    newBal = web3.utils.fromWei(await web3.eth.getBalance(user1));
+    newBal = fromWei(await web3.eth.getBalance(user1));
     console.log("User1 New Eth balance: " + newBal + " ETH");
     console.log("User1 trB interest: " + (newBal - oldBal) + " ETH");
-    console.log("User1 trB tokens: " + web3.utils.fromWei(await ethTrBContract.balanceOf(user1)) + " ETB");
+    console.log("User1 trB tokens: " + fromWei(await ethTrBContract.balanceOf(user1)) + " ETB");
     console.log("JCream new crEth balance: " + fromWei8Dec(await jCreamContract.getTokenBalance(crETH_ADDRESS)) + " crEth");
-    console.log("TrB price: " + web3.utils.fromWei(await jCreamContract.getTrancheBExchangeRate(0, 0)));
+    console.log("TrB price: " + fromWei(await jCreamContract.getTrancheBExchangeRate(0, 0)));
   });
 });

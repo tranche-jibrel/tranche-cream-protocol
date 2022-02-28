@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./interfaces/IJTrancheTokens.sol";
 import "./interfaces/IJCream.sol";
-import "./interfaces/IIncentivesController.sol";
+
 
 contract JTrancheAToken is ERC20, AccessControl, Ownable, IJTrancheTokens {
 	using SafeMath for uint256;
@@ -26,45 +26,6 @@ contract JTrancheAToken is ERC20, AccessControl, Ownable, IJTrancheTokens {
 		jCreamAddress = _jCream;
 		// Grant the minter role to a specified account
         _setupRole(MINTER_ROLE, _jCream);
-	}
-
-	/**
-	 * @dev Internal function that transfer tokens from one address to another.
-	 * Update pointsCorrection to keep funds unchanged.
-	 * @param from The address to transfer from.
-	 * @param to The address to transfer to.
-	 * @param value The amount to be transferred.
-	 */
-	function _transfer(address from, address to, uint256 value) internal override {
-		// moving SIR rewards in protocol
-		// claim and transfer rewards before transfer tokens. Be sure to wait for this function to be completed! 
-		address incentivesControllerAddress = IJCream(jCreamAddress).getSirControllerAddress();
-        bool rewClaimCompleted = IIncentivesController(incentivesControllerAddress).claimRewardsAllMarkets(from);
-		// decrease tokens after claiming rewards
-        if (rewClaimCompleted && value > 0) {
-			uint256 tempTime;
-			uint256 tempAmount;
-			uint256 tempValue = value;
-			uint256 stkDetNum = IJCream(jCreamAddress).getSingleTrancheUserStakeCounterTrA(from, protTrancheNum);
-			for (uint256 i = 1; i<= stkDetNum; i++){
-				(tempTime, tempAmount) = IJCream(jCreamAddress).getSingleTrancheUserSingleStakeDetailsTrA(from, protTrancheNum, protTrancheNum);
-				if (tempAmount > 0) {
-					if (tempAmount <= tempValue) {
-						IJCream(jCreamAddress).setTrAStakingDetails(protTrancheNum, from, i, 0, tempTime);
-						IJCream(jCreamAddress).setTrAStakingDetails(protTrancheNum, to, i, tempAmount, block.timestamp);
-						tempValue = tempValue.sub(tempAmount);
-					} else {
-						uint256 remainingAmount = tempAmount.sub(tempValue);
-						IJCream(jCreamAddress).setTrAStakingDetails(protTrancheNum, from, i, remainingAmount, tempTime);
-						IJCream(jCreamAddress).setTrAStakingDetails(protTrancheNum, to, i, tempValue, block.timestamp);
-						tempValue = 0;
-					}
-				}
-				if (tempValue == 0)
-                break;
-			}
-		}
-		super._transfer(from, to, value);
 	}
 
 	/**
