@@ -174,7 +174,7 @@ contract("JCream", function (accounts) {
     console.log("User1 New Eth balance: " + web3.utils.fromWei(await web3.eth.getBalance(user1), "ether") + " ETH");
     console.log("User1 trB tokens: " + web3.utils.fromWei(await ethTrBContract.balanceOf(user1), "ether") + " ETB");
     console.log("JCream cEth balance: " + web3.utils.fromWei(await jCreamContract.getTokenBalance(cEtherContract.address), "ether") + " cEth");
-    console.log("TrB price: " + web3.utils.fromWei(await jCreamContract.getTrancheBExchangeRate(0, 0), "ether"));
+    console.log("TrB price: " + web3.utils.fromWei(await jCreamContract.getTrancheBExchangeRate(0), "ether"));
   });
 
   it('time passes...', async function () {
@@ -238,7 +238,7 @@ contract("JCream", function (accounts) {
     bal = await ethTrBContract.balanceOf(user1);
     console.log("User1 trB tokens: " + web3.utils.fromWei(bal, "ether") + " ETB");
     console.log("JCream cEth balance: " + web3.utils.fromWei(await jCreamContract.getTokenBalance(cEtherContract.address), "ether") + " cEth");
-    trbPrice = web3.utils.fromWei(await jCreamContract.getTrancheBExchangeRate(0, 0), "ether")
+    trbPrice = web3.utils.fromWei(await jCreamContract.getTrancheBExchangeRate(0), "ether")
     console.log("TrB price: " + trbPrice);
     console.log("CEther eth bal:" + web3.utils.fromWei(await web3.eth.getBalance(cEtherContract.address)), "ether");
     //console.log(stPrice.toString());
@@ -260,6 +260,6 @@ contract("JCream", function (accounts) {
     console.log("User1 trB interest: " + (newBal - oldBal) + " ETH");
     console.log("User1 trB tokens: " + web3.utils.fromWei(await ethTrBContract.balanceOf(user1), "ether") + " ETB");
     console.log("JCream new cEth balance: " + web3.utils.fromWei(await jCreamContract.getTokenBalance(cEtherContract.address), "ether") + " cEth");
-    console.log("TrB price: " + web3.utils.fromWei(await jCreamContract.getTrancheBExchangeRate(0, 0), "ether"));
+    console.log("TrB price: " + web3.utils.fromWei(await jCreamContract.getTrancheBExchangeRate(0), "ether"));
   });
 });

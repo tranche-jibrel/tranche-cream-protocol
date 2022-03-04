@@ -202,7 +202,7 @@ contract("JCream Dai local tests", function (accounts) {
     console.log("Cream total Value: " + web3.utils.fromWei(await jCreamContract.getTotalValue(1), "ether"));
     console.log("TrB total supply: " + web3.utils.fromWei(await daiTrBContract.totalSupply(), "ether"));
     console.log("Cream TrA Value: " + web3.utils.fromWei(await jCreamContract.getTrAValue(1), "ether"));
-    console.log("TrB price: " + web3.utils.fromWei(await jCreamContract.getTrancheBExchangeRate(1, web3.utils.toWei("10000", "ether")), "ether"));
+    console.log("TrB price: " + web3.utils.fromWei(await jCreamContract.getTrancheBExchangeRate(1), "ether"));
     tx = await daiContract.approve(jCreamContract.address, web3.utils.toWei("10000", "ether"), {
       from: user1
     });
@@ -213,7 +213,7 @@ contract("JCream Dai local tests", function (accounts) {
     console.log("User1 trB tokens: " + web3.utils.fromWei(await daiTrBContract.balanceOf(user1), "ether") + " DTB");
     console.log("CErc20 DAI balance: " + web3.utils.fromWei(await daiContract.balanceOf(cERC20Contract.address), "ether") + " DAI");
     console.log("JCream DAI balance: " + web3.utils.fromWei(await jCreamContract.getTokenBalance(cERC20Contract.address), "ether") + " cDai");
-    console.log("TrB price: " + web3.utils.fromWei(await jCreamContract.getTrancheBExchangeRate(1, 0), "ether"));
+    console.log("TrB price: " + web3.utils.fromWei(await jCreamContract.getTrancheBExchangeRate(1), "ether"));
     console.log("Cream price: " + web3.utils.fromWei(await jCreamContract.getCreamPrice(1), "ether"));
     console.log("TrA price: " + web3.utils.fromWei(await jCreamContract.getTrancheAExchangeRate(1), "ether"));
     console.log("Cream TrA Value: " + web3.utils.fromWei(await jCreamContract.getTrAValue(1), "ether"));
@@ -274,7 +274,7 @@ contract("JCream Dai local tests", function (accounts) {
     console.log("User1 trB tokens: "+ web3.utils.fromWei(bal, "ether") + " DTB");
     console.log("JCream cDai balance: "+ web3.utils.fromWei(await jCreamContract.getTokenBalance(cERC20Contract.address), "ether") + " cDai");
     tx = await daiTrBContract.approve(jCreamContract.address, bal, {from: user1});
-    console.log("TrB price: " + web3.utils.fromWei(await jCreamContract.getTrancheBExchangeRate(1, 0), "ether"));
+    console.log("TrB price: " + web3.utils.fromWei(await jCreamContract.getTrancheBExchangeRate(1), "ether"));
     console.log("TrB value: " +  web3.utils.fromWei(await jCreamContract.getTrBValue(1), "ether"));
     tx = await jCreamContract.redeemTrancheBToken(1, bal, {from: user1});
     newBal = web3.utils.fromWei(await daiContract.balanceOf(user1), "ether");
