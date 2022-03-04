@@ -185,7 +185,7 @@ contract("JCream crDai mainnet", function (accounts) {
         console.log("Cream total Value: " + fromWei(await jCreamContract.getTotalValue(1)));
         console.log("TrB total supply: " + fromWei(await daiTrBContract.totalSupply()));
         console.log("Cream TrA Value: " + fromWei(await jCreamContract.getTrAValue(1)));
-        console.log("TrB price: " + fromWei(await jCreamContract.getTrancheBExchangeRate(1, toWei("10000"))));
+        console.log("TrB price: " + fromWei(await jCreamContract.getTrancheBExchangeRate(1)));
 
         tx = await daiContract.methods.approve(jCreamContract.address, toWei("10")).send({
             from: user1
@@ -197,7 +197,7 @@ contract("JCream crDai mainnet", function (accounts) {
         console.log("User1 New DAI balance: " + fromWei(await daiContract.methods.balanceOf(user1).call()) + " DAI");
         console.log("User1 trB tokens: " + fromWei(await daiTrBContract.balanceOf(user1)) + " DTB");
         console.log("JCream crDAI balance: " + fromWei8Dec(await jCreamContract.getTokenBalance(crDAI_ADDRESS)) + " crDai");
-        console.log("TrB price: " + fromWei(await jCreamContract.getTrancheBExchangeRate(1, 0)));
+        console.log("TrB price: " + fromWei(await jCreamContract.getTrancheBExchangeRate(1)));
         console.log("Cream price: " + fromWei(await jCreamContract.getCreamPrice(1)));
         console.log("TrA price: " + fromWei(await jCreamContract.getTrancheAExchangeRate(1)));
         console.log("Cream TrA Value: " + fromWei(await jCreamContract.getTrAValue(1)));
@@ -301,7 +301,7 @@ contract("JCream crDai mainnet", function (accounts) {
         tx = await daiTrBContract.approve(jCreamContract.address, bal, {
             from: user1
         });
-        console.log("TrB price: " + fromWei(await jCreamContract.getTrancheBExchangeRate(1, 0)));
+        console.log("TrB price: " + fromWei(await jCreamContract.getTrancheBExchangeRate(1)));
         console.log("TrB value: " + fromWei(await jCreamContract.getTrBValue(1)));
         tx = await jCreamContract.redeemTrancheBToken(1, bal, {
             from: user1
@@ -326,7 +326,7 @@ contract("JCream crDai mainnet", function (accounts) {
         tx = await daiTrBContract.approve(jCreamContract.address, bal, {
             from: user2
         });
-        console.log("TrB price: " + fromWei(await jCreamContract.getTrancheBExchangeRate(1, 0)));
+        console.log("TrB price: " + fromWei(await jCreamContract.getTrancheBExchangeRate(1)));
         console.log("TrB value: " + fromWei(await jCreamContract.getTrBValue(1)));
         tx = await jCreamContract.redeemTrancheBToken(1, bal, {
             from: user2

@@ -31,7 +31,7 @@ const JTrancheBToken = artifacts.require('JTrancheBToken');
 
 const EthGateway = artifacts.require('./ETHGateway');
 
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+const {ZERO_ADDRESS} = constants;
 
 const fromWei = (x) => web3.utils.fromWei(x.toString());
 const toWei = (x) => web3.utils.toWei(x.toString());
@@ -142,7 +142,7 @@ contract("JCream crEth mainnet", function (accounts) {
     console.log("User1 New Eth balance: " + fromWei(await web3.eth.getBalance(user1)) + " ETH");
     console.log("User1 trB tokens: " + fromWei(await ethTrBContract.balanceOf(user1)) + " ETB");
     console.log("JCream cEth balance: " + fromWei8Dec(await jCreamContract.getTokenBalance(crETH_ADDRESS)) + " crEth");
-    console.log("TrB price: " + fromWei(await jCreamContract.getTrancheBExchangeRate(0, 0)));
+    console.log("TrB price: " + fromWei(await jCreamContract.getTrancheBExchangeRate(0)));
   });
 
   it('time passes...', async function () {
@@ -198,7 +198,7 @@ contract("JCream crEth mainnet", function (accounts) {
     bal = await ethTrBContract.balanceOf(user1);
     console.log("User1 trB tokens: " + fromWei(bal) + " ETB");
     console.log("JCream crEth balance: " + fromWei8Dec(await jCreamContract.getTokenBalance(crETH_ADDRESS)) + " crEth");
-    trbPrice = fromWei(await jCreamContract.getTrancheBExchangeRate(0, 0))
+    trbPrice = fromWei(await jCreamContract.getTrancheBExchangeRate(0))
     console.log("TrB price: " + trbPrice);
     console.log("CEther eth bal:" + fromWei(await web3.eth.getBalance(crETH_ADDRESS)));
     //console.log(stPrice.toString());
@@ -218,6 +218,6 @@ contract("JCream crEth mainnet", function (accounts) {
     console.log("User1 trB interest: " + (newBal - oldBal) + " ETH");
     console.log("User1 trB tokens: " + fromWei(await ethTrBContract.balanceOf(user1)) + " ETB");
     console.log("JCream new crEth balance: " + fromWei8Dec(await jCreamContract.getTokenBalance(crETH_ADDRESS)) + " crEth");
-    console.log("TrB price: " + fromWei(await jCreamContract.getTrancheBExchangeRate(0, 0)));
+    console.log("TrB price: " + fromWei(await jCreamContract.getTrancheBExchangeRate(0)));
   });
 });
