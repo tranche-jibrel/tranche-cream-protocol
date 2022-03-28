@@ -384,7 +384,7 @@ contract JCream is OwnableUpgradeable, ReentrancyGuardUpgradeable, JCreamStorage
      * @return tranche A RPS
      */
     function calcRPBFromPercentage(uint256 _trancheNum) public returns (uint256) {
-         trancheParameters[_trancheNum].trancheACurrentRPB = trancheParameters[_trancheNum].storedTrancheAPrice
+         trancheParameters[_trancheNum].trancheACurrentRPS = trancheParameters[_trancheNum].storedTrancheAPrice
                         .mul(trancheParameters[_trancheNum].trancheAFixedPercentage).div(SECONDS_PER_YEAR).div(1e18);
         return trancheParameters[_trancheNum].trancheACurrentRPS;
     }
